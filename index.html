@@ -15,66 +15,103 @@
   h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
   .rule{height:1px;background:var(--line);margin:0 0 22px}
   label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
-  label .hint{color:var(--muted);text-transform:none;letter-spacing:.02em;font-size:12px;margin-left:8px}
+  label .req{color:#000}
   input,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
   input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
-  #cdek-map{width:100%;height:600px;border:1px solid var(--line);margin-top:14px}
-  .pvz-info{margin-top:10px;font-size:13px;color:#333;border-left:3px solid #000;padding:12px;background:#f9f9f9;display:none}
-  .btn{display:block;width:100%;padding:16px;border:1px solid var(--line);background:#000;color:#fff;font:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.1em;margin-top:24px;font-weight:bold}
-  .btn:hover{background:#fff;color:#000}
-  .err{color:#b00020;font-size:13px;margin-top:8px;font-weight:bold}
-  .cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line)}
+  
+  /* Стили для кнопки поиска города */
+  .find-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: #f4f4f4;
+    border: 1px solid var(--line);
+    font-family: inherit;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .find-btn:hover {
+    background: #000;
+    color: #fff;
+  }
+  .find-btn:active {
+    transform: scale(0.98);
+  }
+
+  #cdek-map { width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; }
+  .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 3px solid #000; padding: 12px; background: #f9f9f9; display: none; }
+  .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; font-weight: bold; }
+  .btn:hover { background:#fff; color:#000; }
+  .err { color:#b00020; font-size:13px; margin-top:8px; font-weight: bold; }
+  .cart-item { display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><div class="logo">VENSKO</div></header>
+  <header>
+    <div class="logo">VENSKO</div>
+  </header>
 
   <h2>Корзина</h2><div class="rule"></div>
   <div id="cart-list">
     <div class="cart-item"><span>VENSKO HUSTLE POLO (Коричневый, M/L)</span><span>3 400 ₽</span></div>
     <div class="cart-item"><span>VENSKO OVERSIZED HOODIE (Чёрный, L/XL)</span><span>5 200 ₽</span></div>
   </div>
-  <div style="text-align:right;margin-top:12px;font-size:18px"><b>Товары: <span id="goods-sum">8 600</span> ₽</b></div>
+  <div style="text-align:right; margin-top:12px; font-size:18px;"><b>Товары: <span id="goods-sum">8 600</span> ₽</b></div>
 
   <h2>Контактные данные</h2><div class="rule"></div>
-  <label>ФИО *</label><input id="fio" placeholder="Иванов Иван Иванович">
-  <label>Телефон *</label><input id="tel" placeholder="+7 999 123 45 67">
+  <label>ФИО <span class="req">*</span></label>
+  <input id="fio" placeholder="Иванов Иван Иванович">
+  <label>Телефон <span class="req">*</span></label>
+  <input id="tel" placeholder="+7 999 123 45 67">
 
   <h2>Доставка СДЭК</h2><div class="rule"></div>
-  <label>Город получателя * <span class="hint">(введите город и нажмите Enter)</span></label>
+  
+  <label>Город получателя <span class="req">*</span></label>
   <input id="city" placeholder="Например: Чебоксары" value="Чебоксары">
-
+  <!-- КНОПКА ПОИСКА -->
+  <button type="button" id="findCityBtn" class="find-btn">🔍 Найти на карте</button>
+  
   <div id="cdek-map"></div>
   <div class="err" id="cdekErr"></div>
-
+  
   <div class="pvz-info" id="pvzInfo">
-    <b id="pvzName"></b><br><span id="pvzAddress"></span><br>
-    <span style="color:#000;font-weight:bold;margin-top:6px;display:block" id="pvzTariff"></span>
+    <b id="pvzName"></b><br>
+    <span id="pvzAddress"></span><br>
+    <span style="color:#000; font-weight:bold; margin-top:6px; display:block;" id="pvzTariff"></span>
   </div>
 
-  <label>Адрес доставки * <span class="hint">(заполняется автоматически)</span></label>
+  <label>Адрес доставки <span class="req">*</span></label>
   <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
 
-  <div style="text-align:right;margin-top:24px;font-size:22px"><b>ИТОГО: <span id="total-sum">8 600</span> ₽</b></div>
+  <div style="text-align:right; margin-top:24px; font-size:22px;">
+    <b>ИТОГО: <span id="total-sum">8 600</span> ₽</b>
+  </div>
+
   <button class="btn" onclick="pay()">Оформить заказ</button>
 </div>
 
 <script>
 const CDEK_CONFIG = {
   servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
-  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994',  // ⚠️ КЛЮЧ «JavaScript API и HTTP Геокодер»
+  // ⚠️ ВСТАВЬТЕ СЮДА НОВЫЙ КЛЮЧ ЯНДЕКСА ("JavaScript API и HTTP Геокодер")
+  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994', 
 };
 
 let chosenTariff = null, chosenPvz = null;
 let currentCity = 'Чебоксары';
 let currentCoords = [56.12684, 47.388736];
-let geocodeTimer = null;
 const GOODS_SUM = 8600;
 
+// Функция инициализации виджета
 function initWidget(city, coords){
   const box = document.getElementById('cdek-map');
-  box.innerHTML = '';
+  box.innerHTML = ''; // Очищаем старую карту перед перерисовкой
+  
   try{
     new window.CDEKWidget({
       from: 'Чебоксары',
@@ -94,13 +131,24 @@ function initWidget(city, coords){
       hideDeliveryOptions: { office: false, door: false },
       forceFilters: { have_cashless: true, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
       hideFilters: { have_cashless: false, have_cash: true, is_dressing_room: false, type: false },
+      // Обязательно для расчета тарифов!
       goods: [{ width: 15, height: 10, length: 20, weight: 1000 }],
+      
       onChoose(profile, tariff, pvz){
-        chosenTariff = tariff; chosenPvz = pvz;
+        chosenTariff = tariff; 
+        chosenPvz = pvz;
         let addrText = '', nameText = 'Доставка';
-        if (profile === 'office' && pvz){ nameText = pvz.name||'ПВЗ СДЭК'; addrText = pvz.address || (pvz.location&&pvz.location.address_full) || ''; }
-        else if (profile === 'door' && pvz){ nameText = 'Курьерская доставка'; addrText = pvz.address || ''; }
+        
+        if (profile === 'office' && pvz){ 
+          nameText = pvz.name || 'ПВЗ СДЭК'; 
+          addrText = pvz.address || (pvz.location && pvz.location.address_full) || ''; 
+        } else if (profile === 'door' && pvz){ 
+          nameText = 'Курьерская доставка'; 
+          addrText = pvz.address || ''; 
+        }
+        
         if (addrText) document.getElementById('addr').value = addrText;
+        
         document.getElementById('pvzName').textContent = nameText;
         document.getElementById('pvzAddress').textContent = addrText;
         document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
@@ -108,54 +156,90 @@ function initWidget(city, coords){
         document.getElementById('cdekErr').textContent = '';
         updateTotal();
       },
-      onError(e){ document.getElementById('cdekErr').textContent = 'Ошибка СДЭК: ' + (e && e.message || JSON.stringify(e)); }
+      onError(e){ 
+        document.getElementById('cdekErr').textContent = 'Ошибка СДЭК: ' + (e && e.message || JSON.stringify(e)); 
+      }
     });
-  }catch(err){ document.getElementById('cdekErr').textContent = 'Не удалось загрузить виджет: ' + err.message; }
+  }catch(err){ 
+    document.getElementById('cdekErr').textContent = 'Не удалось загрузить виджет: ' + err.message; 
+  }
 }
 
+// Функция поиска города через Яндекс и перерисовки виджета
 async function geocodeAndMove(cityName){
+  document.getElementById('cdekErr').textContent = 'Поиск города...';
   try{
     const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK_CONFIG.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
     const data = await (await fetch(url)).json();
     const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
+    
     if (pos){
       const [lng, lat] = pos.split(' ').map(Number);
-      currentCity = cityName; currentCoords = [lat, lng];
-      initWidget(currentCity, currentCoords);
+      currentCity = cityName; 
+      currentCoords = [lat, lng];
+      document.getElementById('city').value = cityName; // Обновляем поле, если пользователь ввел с маленькой буквы
+      document.getElementById('cdekErr').textContent = ''; 
+      initWidget(currentCity, currentCoords); // Перерисовываем виджет с новыми координатами
     } else {
       document.getElementById('cdekErr').textContent = 'Город не найден. Проверьте название.';
     }
-  }catch(err){ console.error('Geocode error:', err); }
+  }catch(err){ 
+    console.error('Geocode error:', err); 
+    document.getElementById('cdekErr').textContent = 'Ошибка поиска. Проверьте ключ API Яндекса.';
+  }
 }
 
-const cityInput = document.getElementById('city');
-cityInput.addEventListener('input', e => {
-  clearTimeout(geocodeTimer);
-  const val = e.target.value.trim();
-  if (val.length > 3) geocodeTimer = setTimeout(() => geocodeAndMove(val), 1000);
+// Привязываем кнопку "Найти" к функции поиска
+document.getElementById('findCityBtn').addEventListener('click', () => {
+  const val = document.getElementById('city').value.trim();
+  if (val.length > 2) {
+    geocodeAndMove(val);
+  } else {
+    document.getElementById('cdekErr').textContent = 'Введите название города (минимум 3 символа)';
+  }
 });
-cityInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter'){ clearTimeout(geocodeTimer); geocodeAndMove(e.target.value.trim()); }
+
+// Также оставляем поддержку клавиши Enter для удобства
+document.getElementById('city').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('findCityBtn').click();
+  }
 });
 
 function updateTotal(){
-  const d = chosenTariff ? chosenTariff.delivery_sum : 0;
-  document.getElementById('total-sum').textContent = (GOODS_SUM + d).toLocaleString('ru-RU');
+  const deliverySum = chosenTariff ? chosenTariff.delivery_sum : 0;
+  document.getElementById('total-sum').textContent = (GOODS_SUM + deliverySum).toLocaleString('ru-RU');
 }
 
 function pay(){
   const fio = document.getElementById('fio').value.trim();
   const tel = document.getElementById('tel').value.trim();
   const addr = document.getElementById('addr').value.trim();
-  if (!fio || !tel){ alert('Заполните ФИО и телефон'); return; }
-  if (!chosenTariff){ alert('Выберите пункт выдачи на карте СДЭК'); return; }
-  if (!addr){ alert('Адрес не заполнен'); return; }
-  const order = { customer:{fio,tel}, delivery:{ city:currentCity, address:addr, tariffName:chosenTariff.tariff_name, deliverySum:chosenTariff.delivery_sum }, total: GOODS_SUM + chosenTariff.delivery_sum };
-  console.log('✅ ЗАКАЗ:', order);
-  alert('Заказ сформирован!\nДоставка: '+chosenTariff.delivery_sum+' ₽\nИтого: '+order.total+' ₽');
+
+  if (!fio || !tel) { alert('Заполните ФИО и телефон'); return; }
+  if (!chosenTariff) { alert('Пожалуйста, выберите пункт выдачи на карте СДЭК'); return; }
+  if (!addr) { alert('Адрес доставки не заполнен'); return; }
+
+  const orderData = {
+    customer: { fio, tel },
+    delivery: {
+      city: currentCity,
+      address: addr,
+      tariffName: chosenTariff.tariff_name,
+      deliverySum: chosenTariff.delivery_sum
+    },
+    total: GOODS_SUM + chosenTariff.delivery_sum
+  };
+  
+  console.log('✅ ГОТОВЫЙ ЗАКАЗ:', orderData);
+  alert('Заказ сформирован!\nГород: ' + currentCity + '\nДоставка: ' + chosenTariff.deliverySum + ' ₽\nИтого: ' + orderData.total + ' ₽');
 }
 
-document.addEventListener('DOMContentLoaded', () => initWidget(currentCity, currentCoords));
+// Запуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+  initWidget(currentCity, currentCoords);
+});
 </script>
 </body>
 </html>
