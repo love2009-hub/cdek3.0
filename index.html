@@ -20,9 +20,7 @@
   input,select,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
   input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
   
-  /* Контейнер карты ОБЯЗАТЕЛЬНО должен иметь высоту, как в инструкции */
   #cdek-map { width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; }
-  
   .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 3px solid #000; padding: 12px; background: #f9f9f9; display: none; }
   .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; font-weight: bold; }
   .btn:hover { background:#fff; color:#000; }
@@ -51,11 +49,9 @@
 
   <h2>Доставка СДЭК</h2><div class="rule"></div>
   
-  <!-- Внешнее поле города. Оно заполняется автоматически из виджета -->
-  <label>Город получателя <span class="req">*</span> <span class="hint">(выберите город внутри карты ниже, и это поле заполнится само)</span></label>
-  <input id="city" placeholder="Например: Чебоксары" value="Чебоксары" readonly style="background:#f4f4f4; cursor:not-allowed;">
+  <label>Город получателя <span class="req">*</span> <span class="hint">(введите город и нажмите Enter)</span></label>
+  <input id="city" placeholder="Например: Чебоксары" value="Чебоксары">
   
-  <!-- Контейнер для виджета -->
   <div id="cdek-map"></div>
   <div class="err" id="cdekErr"></div>
   
@@ -83,17 +79,24 @@ const CDEK_CONFIG = {
 
 let chosenTariff = null;
 let chosenPvz = null;
+let currentCity = 'Чебоксары';
+let currentCoords = [56.12684, 47.388736]; // Координаты Чебоксар по умолчанию
+let geocodeTimer = null;
 const GOODS_SUM = 8600;
 
-document.addEventListener('DOMContentLoaded', () => {
+// Функция инициализации виджета
+function initWidget(city, coords) {
+  const box = document.getElementById('cdek-map');
+  box.innerHTML = ''; // Очищаем перед перерисовкой
+  
   try {
-    // Инициализация строго по вашей конфигурации из документации
-    const widget = new window.CDEKWidget({
-      from: 'Чебоксары',
+    new window.CDEKWidget({
+      from: 'Чебоксары', // Город отправления
+      to: city,           // Город получения (динамический)
       root: 'cdek-map',
       apiKey: CDEK_CONFIG.apiKey,
       servicePath: CDEK_CONFIG.servicePath,
-      defaultLocation: 'Чебоксары',
+      defaultLocation: coords, // Координаты для центрирования карты
       canChoose: true,
       sender: false,
       fixBounds: 'country',
@@ -106,55 +109,79 @@ document.addEventListener('DOMContentLoaded', () => {
       forceFilters: { have_cashless: true, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
       hideFilters: { have_cashless: false, have_cash: true, is_dressing_room: false, type: false },
       
-      // ГЛАВНОЕ: обработка выбора ПВЗ или курьерской доставки
+      // ⚠️ КРИТИЧЕСКИ ВАЖНО: без этого параметра тарифы не считаются!
+      goods: [{ width: 15, height: 10, length: 20, weight: 1000 }],
+      
       onChoose: function(profile, tariff, pvz) {
-        console.log('СДЭК Выбор:', profile, tariff, pvz);
-        
         chosenTariff = tariff;
         chosenPvz = pvz;
         
         let addrText = '';
         let nameText = 'Доставка';
-        let cityText = '';
 
         if (profile === 'office' && pvz) {
           nameText = pvz.name || 'Пункт выдачи СДЭК';
           addrText = pvz.address || (pvz.location && pvz.location.address_full) || '';
-          cityText = pvz.city || '';
         } else if (profile === 'door' && pvz) {
           nameText = 'Курьерская доставка';
           addrText = pvz.address || '';
-          cityText = pvz.city || '';
         }
 
-        // 1. Автозаполнение внешнего поля города
-        if (cityText) {
-          document.getElementById('city').value = cityText;
-        }
-
-        // 2. Автозаполнение поля адреса
-        if (addrText) {
-          document.getElementById('addr').value = addrText;
-        }
+        if (addrText) document.getElementById('addr').value = addrText;
         
-        // 3. Отображение информации о выборе
         document.getElementById('pvzName').textContent = nameText;
         document.getElementById('pvzAddress').textContent = addrText;
         document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
         document.getElementById('pvzInfo').style.display = 'block';
         document.getElementById('cdekErr').textContent = '';
-
-        // 4. Пересчет итоговой суммы
         updateTotal();
       },
 
       onError: function(e) {
         console.error('СДЭК Ошибка:', e);
-        document.getElementById('cdekErr').textContent = 'Ошибка загрузки СДЭК: ' + (e.message || JSON.stringify(e));
+        document.getElementById('cdekErr').textContent = 'Ошибка СДЭК: ' + (e.message || JSON.stringify(e));
       }
     });
   } catch (err) {
     document.getElementById('cdekErr').textContent = 'Не удалось загрузить виджет: ' + err.message;
+  }
+}
+
+// Геокодинг города через Яндекс
+async function geocodeAndMove(cityName) {
+  try {
+    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK_CONFIG.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
+    if (pos) {
+      const [lng, lat] = pos.split(' ').map(Number);
+      currentCity = cityName;
+      currentCoords = [lat, lng];
+      document.getElementById('city').value = cityName; // Обновляем поле
+      initWidget(currentCity, currentCoords); // Перерисовываем виджет
+    } else {
+      document.getElementById('cdekErr').textContent = 'Город не найден. Проверьте название.';
+    }
+  } catch (err) {
+    console.error('Geocode error:', err);
+  }
+}
+
+// Обработчики поля города
+const cityInput = document.getElementById('city');
+cityInput.addEventListener('input', (e) => {
+  clearTimeout(geocodeTimer);
+  const val = e.target.value.trim();
+  if (val.length > 3) {
+    geocodeTimer = setTimeout(() => geocodeAndMove(val), 1000); // Ждем 1 сек после ввода
+  }
+});
+cityInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(geocodeTimer);
+    geocodeAndMove(e.target.value.trim());
   }
 });
 
@@ -167,29 +194,30 @@ function pay() {
   const fio = document.getElementById('fio').value.trim();
   const tel = document.getElementById('tel').value.trim();
   const addr = document.getElementById('addr').value.trim();
-  const city = document.getElementById('city').value.trim();
 
   if (!fio || !tel) { alert('Заполните ФИО и телефон'); return; }
-  if (!city) { alert('Укажите город доставки (выберите его на карте СДЭК)'); return; }
-  if (!chosenTariff) { alert('Пожалуйста, выберите пункт выдачи или способ доставки на карте СДЭК'); return; }
-  if (!addr) { alert('Адрес доставки не заполнен. Выберите ПВЗ на карте.'); return; }
+  if (!chosenTariff) { alert('Пожалуйста, выберите пункт выдачи на карте СДЭК'); return; }
+  if (!addr) { alert('Адрес доставки не заполнен'); return; }
 
   const orderData = {
     customer: { fio, tel },
     delivery: {
-      city: city,
+      city: currentCity,
       address: addr,
-      tariffCode: chosenTariff.tariff_code,
       tariffName: chosenTariff.tariff_name,
-      deliverySum: chosenTariff.delivery_sum,
-      pvzCode: chosenPvz ? (chosenPvz.code || chosenPvz.location?.code) : null
+      deliverySum: chosenTariff.delivery_sum
     },
     total: GOODS_SUM + chosenTariff.delivery_sum
   };
   
-  console.log('✅ ГОТОВЫЙ ЗАКАЗ К ОТПРАВКЕ:', orderData);
-  alert('Заказ успешно сформирован!\n\nГород: ' + city + '\nАдрес: ' + addr + '\nДоставка: ' + chosenTariff.delivery_sum + ' ₽\nИтого: ' + orderData.total + ' ₽\n\n(Данные выведены в консоль F12)');
+  console.log('✅ ГОТОВЫЙ ЗАКАЗ:', orderData);
+  alert('Заказ сформирован!\nДоставка: ' + chosenTariff.delivery_sum + ' ₽\nИтого: ' + orderData.total + ' ₽');
 }
+
+// Запуск при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+  initWidget(currentCity, currentCoords);
+});
 </script>
 </body>
 </html>
