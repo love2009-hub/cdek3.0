@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VENSKO — оформление</title>
+
+<!-- Виджет ПВЗ СДЭК v3 -->
+<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@3" charset="utf-8"></script>
+
+<style>
+:root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  font-size:15px;letter-spacing:.02em}
+a{color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:24px 20px 80px}
+
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 22px;border-bottom:1px solid var(--line)}
+.logo{font-weight:700;font-style:italic;font-size:26px;letter-spacing:.06em}
+nav{display:flex;gap:18px;align-items:center}
+nav button{background:none;border:0;cursor:pointer;font:inherit;padding:4px}
+.bag{position:relative}
+.bag b{position:absolute;top:-6px;right:-10px;background:#000;color:#fff;
+  border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;
+  align-items:center;justify-content:center}
+
+h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
+.rule{height:1px;background:var(--line);margin:0 0 22px}
+label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
+label .req{color:#000}
+label .opt{color:var(--muted);text-transform:none;letter-spacing:.06em;font-size:13px}
+input,select,textarea{width:100%;padding:14px;border:1px solid var(--line);
+  background:#fff;font:inherit;color:var(--ink)}
+input::placeholder,textarea::placeholder{color:#9a9a9a}
+input:focus,select:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.card{border:1px solid var(--line);padding:12px}
+.card .img{aspect-ratio:4/5;background:#f2f2f2;display:flex;align-items:center;
+  justify-content:center;font-size:12px;color:#777;margin-bottom:10px}
+.card .n{font-size:14px}
+.card .p{margin:6px 0 10px}
+.btn{display:block;width:100%;padding:14px;border:1px solid var(--line);
+  background:#fff;font:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.1em}
+.btn:hover{background:#000;color:#fff}
+.btn.primary{background:#000;color:#fff}
+.btn.primary:hover{background:#fff;color:#000}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}
+.toggle button{padding:18px;background:#fff;border:0;border-right:1px solid var(--line);
+  font:inherit;cursor:pointer;text-transform:none}
+.toggle button:last-child{border-right:0}
+.toggle button.on{background:#f3f3f3;box-shadow:inset 0 0 0 2px #000}
+
+.line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}
+.line.total{border-bottom:0;font-size:20px;padding-top:16px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:22px 0;font-size:13px}
+.check input{width:18px;height:18px;margin-top:2px}
+
+#cdek-map{width:100%;height:520px;border:1px solid var(--line);margin-top:14px}
+.err{color:#b00020;font-size:13px;margin-top:8px}
+.pvz{margin-top:10px;font-size:13px;color:#333;border-left:2px solid #000;padding-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">VENSKO</div>
+  <nav>
+    <button onclick="scrollTo(0,0)">Каталог</button>
+    <button class="bag" onclick="document.getElementById('checkout').scrollIntoView({behavior:'smooth'})">
+      Корзина <b id="bagCount">0</b>
+    </button>
+  </nav>
+</header>
+
+<h2>Каталог</h2><div class="rule"></div>
+<div class="grid" id="catalog"></div>
+
+<section id="checkout">
+  <h2>Контактные данные</h2><div class="rule"></div>
+  <label>ФИО <span class="req">*</span></label>
+  <input id="fio" placeholder="Иванов Иван Иванович">
+  <label>Телефон <span class="req">*</span></label>
+  <input id="tel" placeholder="+7 999 123 45 67">
+  <label>Email <span class="req">*</span></label>
+  <input id="mail" placeholder="example@mail.ru">
+  <label>Telegram <span class="opt">(необязательно — для связи)</span></label>
+  <input id="tg" placeholder="@username или t.me/username">
+
+  <h2>Доставка</h2><div class="rule"></div>
+  <label>Страна <span class="req">*</span></label>
+  <select id="country"><option>🇷🇺 Россия</option></select>
+  <label>Город или населённый пункт <span class="req">*</span></label>
+  <input id="city" placeholder="Москва" value="Москва">
+
+  <label>Способ доставки</label>
+  <div class="toggle">
+    <button type="button" class="on" data-set="normal">Обычная доставка</button>
+    <button type="button" data-set="express">Экспресс доставка</button>
+  </div>
+
+  <div id="cdek-map"></div>
+  <div class="pvz" id="pvzInfo">ПВЗ ещё не выбран — кликните по карте или выберите из списка.</div>
+  <div class="err" id="cdekErr"></div>
+
+  <label>Адрес <span class="req">*</span></label>
+  <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
+
+  <label>Комментарий к заказу <span class="opt">(необязательно)</span></label>
+  <textarea id="cmt" rows="2" placeholder="Пожелания к заказу, какие вещи нашего бренда у вас уже есть (для Secret Box) или пожелания к доставке"></textarea>
+
+  <h2>Ваш заказ</h2><div class="rule"></div>
+  <div id="cart"></div>
+  <div class="line"><span>Подитог</span><span id="sub">0 ₽</span></div>
+  <div class="line"><span>Доставка (СДЭК)</span><span id="ship">— ₽</span></div>
+  <div class="line total"><span>ИТОГО</span><span id="tot">0 ₽</span></div>
+
+  <label class="check" style="text-transform:none;letter-spacing:0">
+    <input type="checkbox" id="agree">
+    <span>Я согласен с <a href="#">публичной офертой</a> и <a href="#">политикой конфиденциальности</a></span>
+  </label>
+
+  <button class="btn primary" id="payBtn" onclick="pay()">Оплатить</button>
+</section>
+</div>
+
+<script>
+const PRODUCTS = [
+  {id:'polo', name:'VENSKO HUSTLE POLO',       color:'КОРИЧНЕВЫЙ', price:3400, size:'M/L'},
+  {id:'hood', name:'VENSKO OVERSIZED HOODIE',  color:'ЧЁРНЫЙ',     price:5200, size:'L/XL'},
+  {id:'tee',  name:'VENSKO BASIC TEE',         color:'БЕЛЫЙ',      price:1800, size:'S/M'},
+];
+
+let cart = JSON.parse(localStorage.getItem('vensko_cart')||'{}');
+const save = ()=>localStorage.setItem('vensko_cart', JSON.stringify(cart));
+const fmt = n => n.toLocaleString('ru-RU').replace(/,/g,' ') + ' ₽';
+
+function renderCatalog(){
+  document.getElementById('catalog').innerHTML = PRODUCTS.map(p=>`
+    <div class="card">
+      <div class="img">${p.id.toUpperCase()}</div>
+      <div class="n">${p.name}<br><span class="muted small">(${p.color})</span></div>
+      <div class="p">${fmt(p.price)}</div>
+      <button class="btn" onclick="add('${p.id}')">В корзину</button>
+    </div>`).join('');
+}
+function add(id){ cart[id]=(cart[id]||0)+1; save(); renderCart(); }
+function remove(id){ delete cart[id]; save(); renderCart(); }
+
+function renderCart(){
+  const items = PRODUCTS.filter(p=>cart[p.id]);
+  document.getElementById('bagCount').textContent = Object.values(cart).reduce((a,b)=>a+b,0);
+  document.getElementById('cart').innerHTML = items.length ? items.map(p=>`
+    <div class="line">
+      <span>${p.name} (${p.color})<br>
+        <span class="muted small">Размер: ${p.size} · ${cart[p.id]} шт.</span></span>
+      <span>${fmt(p.price*cart[p.id])} <button onclick="remove('${p.id}')" style="border:0;background:none;cursor:pointer">✕</button></span>
+    </div>`).join('') : '<div class="muted">Корзина пуста — добавьте товар из каталога.</div>';
+  const sub = items.reduce((s,p)=>s+p.price*cart[p.id],0);
+  document.getElementById('sub').textContent = fmt(sub);
+  recalcTotal();
+}
+
+/* ======= СДЭК ВИДЖЕТ ======= */
+const CDEK = {
+  // ⚠️ Для локального теста: http://localhost:8000/service.php
+  // ⚠️ Для боевого сайта: https://ваш-домен.ru/service.php
+  servicePath: 'http://localhost:8000/service.php',
+  apiKey:      '964f6a11-7ee5-488a-8f87-a9e765871369',
+  from:        'Новосибирск',
+  defaultLocation: 'Москва',
+};
+
+const TARIFFS = {
+  normal:  ['136','137','368'],
+  express: ['1','2','10'],
+};
+
+let widget = null, chosenPvz = null, chosenTariff = null, deliveryMode = 'normal';
+
+function mountWidget(){
+  const box = document.getElementById('cdek-map');
+  box.innerHTML = '';
+  chosenPvz = null; chosenTariff = null;
+  document.getElementById('pvzInfo').textContent = 'ПВЗ ещё не выбран — кликните по карте или выберите из списка.';
+  document.getElementById('ship').textContent = '— ₽'; recalcTotal();
+
+  try{
+    widget = new window.CDEKWidget({
+      from: CDEK.from,
+      to:   document.getElementById('city').value || CDEK.defaultLocation,
+      root: 'cdek-map',
+      apiKey: CDEK.apiKey,
+      servicePath: CDEK.servicePath,
+      defaultLocation: CDEK.defaultLocation,
+      lang: 'ru',
+      type: 'inline',
+      tariffs: TARIFFS[deliveryMode],
+      payload: {
+        goodInfo: buildGoodInfo(),
+        from: { city: CDEK.from },
+        to:   { city: document.getElementById('city').value || CDEK.defaultLocation },
+      },
+      onSelect: (pvz)=>{
+        chosenPvz = pvz;
+        document.getElementById('pvzInfo').innerHTML =
+          `<b>${pvz.name||'ПВЗ'}</b><br>${pvz.address||''}<br>${pvz.workTime||''}`;
+        recalcTotal();
+      },
+      onTariffChange: (t)=>{ chosenTariff = t; recalcTotal(); },
+      onReady: ()=>{ document.getElementById('cdekErr').textContent=''; },
+      onError: (e)=>{ document.getElementById('cdekErr').textContent = 'Виджет СДЭК: ' + (e?.message||JSON.stringify(e)); },
+    });
+  }catch(err){
+    document.getElementById('cdekErr').textContent = 'Не удалось инициализировать виджет: '+err.message;
+  }
+}
+
+function buildGoodInfo(){
+  let w=0, l=20, wd=15, h=10;
+  Object.keys(cart).forEach(id=>{ w += 300*cart[id]; });
+  return [{ weight: w||1000, length:l, width:wd, height:h }];
+}
+
+document.querySelectorAll('.toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.toggle button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    deliveryMode = b.dataset.set;
+    mountWidget();
+  });
+});
+document.getElementById('city').addEventListener('change', mountWidget);
+
+function recalcTotal(){
+  const sub = PRODUCTS.filter(p=>cart[p.id]).reduce((s,p)=>s+p.price*cart[p.id],0);
+  const ship = chosenTariff?.price ?? 0;
+  document.getElementById('ship').textContent = ship ? fmt(ship) : '— ₽';
+  document.getElementById('tot').textContent  = fmt(sub + ship);
+}
+
+function pay(){
+  const need = ['fio','tel','mail'];
+  for(const f of need){ if(!document.getElementById(f).value.trim()){ alert('Заполните поле '+f); return; } }
+  if(!Object.keys(cart).length){ alert('Корзина пуста'); return; }
+  if(!document.getElementById('agree').checked){ alert('Нужно согласие с офертой'); return; }
+  if(!chosenPvz && !document.getElementById('addr').value.trim()){
+    alert('Выберите ПВЗ на карте или введите адрес доставки'); return;
+  }
+  const order = {
+    customer:{ fio: fio.value, tel: tel.value, mail: mail.value, tg: tg.value },
+    delivery:{ mode: deliveryMode, tariff: chosenTariff, pvz: chosenPvz,
+               city: city.value, address: addr.value, comment: cmt.value },
+    items: PRODUCTS.filter(p=>cart[p.id]).map(p=>({...p, qty:cart[p.id]})),
+    subtotal: +sub.textContent.replace(/\D/g,''),
+    shipping: chosenTariff?.price ?? 0,
+    total:    +tot.textContent.replace(/\D/g,''),
+  };
+  console.log('ORDER PAYLOAD →', order);
+  alert('Заказ сформирован (демо). Смотри консоль браузера (F12).');
+}
+
+renderCatalog(); renderCart();
+window.addEventListener('DOMContentLoaded', mountWidget);
+</script>
+</body>
+</html>
