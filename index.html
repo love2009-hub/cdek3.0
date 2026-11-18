@@ -164,70 +164,71 @@ function renderCart(){
         <span class="muted small">Размер: ${p.size} · ${cart[p.id]} шт.</span></span>
       <span>${fmt(p.price*cart[p.id])} <button onclick="remove('${p.id}')" style="border:0;background:none;cursor:pointer">✕</button></span>
     </div>`).join('') : '<div class="muted">Корзина пуста — добавьте товар из каталога.</div>';
-  const sub = items.reduce((s,p)=>s+p.price*cart[p.id],0);
-  document.getElementById('sub').textContent = fmt(sub);
+  document.getElementById('sub').textContent = fmt(subtotal());
   recalcTotal();
 }
+function subtotal(){
+  return PRODUCTS.filter(p=>cart[p.id]).reduce((s,p)=>s+p.price*cart[p.id],0);
+}
 
-/* ======= СДЭК ВИДЖЕТ ======= */
+/* ======= СДЭК ВИДЖЕТ v3 ======= */
 const CDEK = {
-  // ⚠️ Для локального теста: http://localhost:8000/service.php
-  // ⚠️ Для боевого сайта: https://ваш-домен.ru/service.php
   servicePath: 'https://cdek30.infinityfree.io/service.php',
   apiKey:      '972c2b0a-3090-439e-982f-4692ad4ab994',
-  from:        'чебоксары',
-  defaultLocation: 'Москва',
+  from:        { country_code:'RU', city:'Новосибирск', code:270 },
+  defaultLocation: [55.751244, 37.618423],
 };
 
+// tariffs = ОБЪЕКТ с ключами office/door/pickup и ЧИСЛАМИ-кодами тарифов
+// Посылка: 136 склад-склад (office), 137 склад-дверь (door), 368 склад-постамат (pickup)
 const TARIFFS = {
-  normal:  ['136','137','368'],
-  express: ['1','2','10'],
+  normal:  { office:[136], door:[137], pickup:[368] },
+  express: { office:[2],   door:[1],   pickup:[]    },
 };
 
-let widget = null, chosenPvz = null, chosenTariff = null, deliveryMode = 'normal';
+let widget = null, chosenMode = null, chosenTariff = null, chosenAddress = null, deliveryMode = 'normal';
+
+function buildGoods(){
+  // goods: [{width, height, length (см), weight (г)}]
+  let w = 0;
+  Object.keys(cart).forEach(id => { w += 300 * cart[id]; });
+  return [{ width:15, height:10, length:20, weight: w || 1000 }];
+}
 
 function mountWidget(){
   const box = document.getElementById('cdek-map');
   box.innerHTML = '';
-  chosenPvz = null; chosenTariff = null;
+  chosenMode = null; chosenTariff = null; chosenAddress = null;
   document.getElementById('pvzInfo').textContent = 'ПВЗ ещё не выбран — кликните по карте или выберите из списка.';
-  document.getElementById('ship').textContent = '— ₽'; recalcTotal();
+  document.getElementById('ship').textContent = '— ₽';
+  recalcTotal();
 
   try{
     widget = new window.CDEKWidget({
       from: CDEK.from,
-      to:   document.getElementById('city').value || CDEK.defaultLocation,
       root: 'cdek-map',
       apiKey: CDEK.apiKey,
       servicePath: CDEK.servicePath,
       defaultLocation: CDEK.defaultLocation,
-      lang: 'ru',
-      type: 'inline',
+      lang: 'rus',
+      currency: 'RUB',
+      canChoose: true,
+      goods: buildGoods(),
       tariffs: TARIFFS[deliveryMode],
-      payload: {
-        goodInfo: buildGoodInfo(),
-        from: { city: CDEK.from },
-        to:   { city: document.getElementById('city').value || CDEK.defaultLocation },
-      },
-      onSelect: (pvz)=>{
-        chosenPvz = pvz;
+      onReady(){ document.getElementById('cdekErr').textContent = ''; },
+      onCalculate(){ /* расчёт обновился */ },
+      onChoose(mode, tariff, address){
+        chosenMode = mode; chosenTariff = tariff; chosenAddress = address;
+        const addr = (address && (address.address || (address.PVZ && address.PVZ.Address))) || JSON.stringify(address);
+        const name = (address && (address.name || (address.PVZ && address.PVZ.Name))) || 'Доставка';
         document.getElementById('pvzInfo').innerHTML =
-          `<b>${pvz.name||'ПВЗ'}</b><br>${pvz.address||''}<br>${pvz.workTime||''}`;
+          `<b>${name}</b><br>${addr}<br><span class="muted small">Режим: ${mode==='door'?'до двери':'до ПВЗ'} · ${tariff?.tariff_name||''}</span>`;
         recalcTotal();
       },
-      onTariffChange: (t)=>{ chosenTariff = t; recalcTotal(); },
-      onReady: ()=>{ document.getElementById('cdekErr').textContent=''; },
-      onError: (e)=>{ document.getElementById('cdekErr').textContent = 'Виджет СДЭК: ' + (e?.message||JSON.stringify(e)); },
     });
   }catch(err){
-    document.getElementById('cdekErr').textContent = 'Не удалось инициализировать виджет: '+err.message;
+    document.getElementById('cdekErr').textContent = 'Не удалось инициализировать виджет: ' + err.message;
   }
-}
-
-function buildGoodInfo(){
-  let w=0, l=20, wd=15, h=10;
-  Object.keys(cart).forEach(id=>{ w += 300*cart[id]; });
-  return [{ weight: w||1000, length:l, width:wd, height:h }];
 }
 
 document.querySelectorAll('.toggle button').forEach(b=>{
@@ -238,31 +239,29 @@ document.querySelectorAll('.toggle button').forEach(b=>{
     mountWidget();
   });
 });
-document.getElementById('city').addEventListener('change', mountWidget);
 
 function recalcTotal(){
-  const sub = PRODUCTS.filter(p=>cart[p.id]).reduce((s,p)=>s+p.price*cart[p.id],0);
-  const ship = chosenTariff?.price ?? 0;
+  const sub = subtotal();
+  const ship = chosenTariff ? (chosenTariff.delivery_sum || 0) : 0;
   document.getElementById('ship').textContent = ship ? fmt(ship) : '— ₽';
   document.getElementById('tot').textContent  = fmt(sub + ship);
 }
 
 function pay(){
-  const need = ['fio','tel','mail'];
-  for(const f of need){ if(!document.getElementById(f).value.trim()){ alert('Заполните поле '+f); return; } }
+  const g = id => document.getElementById(id).value.trim();
+  for(const f of ['fio','tel','mail']) if(!g(f)){ alert('Заполните поле '+f); return; }
   if(!Object.keys(cart).length){ alert('Корзина пуста'); return; }
   if(!document.getElementById('agree').checked){ alert('Нужно согласие с офертой'); return; }
-  if(!chosenPvz && !document.getElementById('addr').value.trim()){
-    alert('Выберите ПВЗ на карте или введите адрес доставки'); return;
-  }
+  if(!chosenTariff){ alert('Выберите способ доставки в виджете СДЭК'); return; }
+
   const order = {
-    customer:{ fio: fio.value, tel: tel.value, mail: mail.value, tg: tg.value },
-    delivery:{ mode: deliveryMode, tariff: chosenTariff, pvz: chosenPvz,
-               city: city.value, address: addr.value, comment: cmt.value },
+    customer:{ fio:g('fio'), tel:g('tel'), mail:g('mail'), tg:g('tg') },
+    delivery:{ mode:chosenMode, tariff:chosenTariff, address:chosenAddress,
+               city:g('city'), addressText:g('addr'), comment:g('cmt') },
     items: PRODUCTS.filter(p=>cart[p.id]).map(p=>({...p, qty:cart[p.id]})),
-    subtotal: +sub.textContent.replace(/\D/g,''),
-    shipping: chosenTariff?.price ?? 0,
-    total:    +tot.textContent.replace(/\D/g,''),
+    subtotal: subtotal(),
+    shipping: chosenTariff.delivery_sum || 0,
+    total: subtotal() + (chosenTariff.delivery_sum || 0),
   };
   console.log('ORDER PAYLOAD →', order);
   alert('Заказ сформирован (демо). Смотри консоль браузера (F12).');
