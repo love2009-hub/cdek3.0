@@ -173,26 +173,52 @@ function subtotal(){
 
 /* ======= СДЭК ВИДЖЕТ v3 ======= */
 const CDEK = {
+  // ✅ Ваш рабочий URL Cloudflare Worker
   servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
   apiKey:      '972c2b0a-3090-439e-982f-4692ad4ab994',
   from:        { country_code:'RU', city:'Новосибирск', code:270 },
-  defaultLocation: [55.751244, 37.618423],
+  defaultLocation: [55.751244, 37.618423], // Москва по умолчанию
 };
 
-// tariffs = ОБЪЕКТ с ключами office/door/pickup и ЧИСЛАМИ-кодами тарифов
-// Посылка: 136 склад-склад (office), 137 склад-дверь (door), 368 склад-постамат (pickup)
 const TARIFFS = {
   normal:  { office:[136], door:[137], pickup:[368] },
   express: { office:[2],   door:[1],   pickup:[]    },
 };
 
 let widget = null, chosenMode = null, chosenTariff = null, chosenAddress = null, deliveryMode = 'normal';
+let geocodeTimer = null;
 
 function buildGoods(){
-  // goods: [{width, height, length (см), weight (г)}]
   let w = 0;
   Object.keys(cart).forEach(id => { w += 300 * cart[id]; });
   return [{ width:15, height:10, length:20, weight: w || 1000 }];
+}
+
+// Геокодинг города через Яндекс API
+async function geocodeCity(cityName) {
+  try {
+    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
+    if (pos) {
+      const [lng, lat] = pos.split(' ').map(Number);
+      return [lat, lng];
+    }
+    return null;
+  } catch (err) {
+    console.error('Geocode error:', err);
+    return null;
+  }
+}
+
+async function updateWidgetLocation(cityName) {
+  const coords = await geocodeCity(cityName);
+  if (coords) {
+    CDEK.defaultLocation = coords;
+    mountWidget();
+  }
 }
 
 function mountWidget(){
@@ -219,10 +245,29 @@ function mountWidget(){
       onCalculate(){ /* расчёт обновился */ },
       onChoose(mode, tariff, address){
         chosenMode = mode; chosenTariff = tariff; chosenAddress = address;
-        const addr = (address && (address.address || (address.PVZ && address.PVZ.Address))) || JSON.stringify(address);
-        const name = (address && (address.name || (address.PVZ && address.PVZ.Name))) || 'Доставка';
+        
+        let addrText = '';
+        let pvzName = 'Доставка';
+        
+        if (address) {
+          if (address.PVZ) {
+            pvzName = address.PVZ.Name || 'ПВЗ';
+            addrText = address.PVZ.Address || '';
+          } else if (address.address) {
+            addrText = address.address;
+            pvzName = 'Курьерская доставка';
+          } else {
+            addrText = JSON.stringify(address);
+          }
+        }
+        
+        // ✅ Автозаполнение поля "Адрес"
+        if (addrText) {
+          document.getElementById('addr').value = addrText;
+        }
+        
         document.getElementById('pvzInfo').innerHTML =
-          `<b>${name}</b><br>${addr}<br><span class="muted small">Режим: ${mode==='door'?'до двери':'до ПВЗ'} · ${tariff?.tariff_name||''}</span>`;
+          `<b>${pvzName}</b><br>${addrText}<br><span class="muted small">Режим: ${mode==='door'?'до двери':'до ПВЗ'} · ${tariff?.tariff_name||''}</span>`;
         recalcTotal();
       },
     });
@@ -230,6 +275,28 @@ function mountWidget(){
     document.getElementById('cdekErr').textContent = 'Не удалось инициализировать виджет: ' + err.message;
   }
 }
+
+// ✅ Автопоиск города при вводе (с задержкой 1 сек)
+document.getElementById('city').addEventListener('input', (e) => {
+  clearTimeout(geocodeTimer);
+  const cityName = e.target.value.trim();
+  if (cityName.length < 3) return;
+  geocodeTimer = setTimeout(() => updateWidgetLocation(cityName), 1000);
+});
+
+document.getElementById('city').addEventListener('blur', (e) => {
+  clearTimeout(geocodeTimer);
+  const cityName = e.target.value.trim();
+  if (cityName.length >= 3) updateWidgetLocation(cityName);
+});
+
+document.getElementById('city').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(geocodeTimer);
+    const cityName = e.target.value.trim();
+    if (cityName.length >= 3) updateWidgetLocation(cityName);
+  }
+});
 
 document.querySelectorAll('.toggle button').forEach(b=>{
   b.addEventListener('click', ()=>{
@@ -264,7 +331,7 @@ function pay(){
     total: subtotal() + (chosenTariff.delivery_sum || 0),
   };
   console.log('ORDER PAYLOAD →', order);
-  alert('Заказ сформирован (демо). Смотри консоль браузера (F12).');
+  alert('Заказ сформирован (демо). Данные заказа выведены в консоль (F12).');
 }
 
 renderCatalog(); renderCart();
