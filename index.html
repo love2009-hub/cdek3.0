@@ -3,339 +3,161 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VENSKO — оформление</title>
-
-<!-- Виджет ПВЗ СДЭК v3 -->
+<title>VENSKO — Оформление заказа</title>
 <script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@3" charset="utf-8"></script>
-
 <style>
-:root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:"IBM Plex Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
-  font-size:15px;letter-spacing:.02em}
-a{color:inherit}
-.wrap{max-width:760px;margin:0 auto;padding:24px 20px 80px}
-
-header{display:flex;align-items:center;justify-content:space-between;
-  padding:18px 0 22px;border-bottom:1px solid var(--line)}
-.logo{font-weight:700;font-style:italic;font-size:26px;letter-spacing:.06em}
-nav{display:flex;gap:18px;align-items:center}
-nav button{background:none;border:0;cursor:pointer;font:inherit;padding:4px}
-.bag{position:relative}
-.bag b{position:absolute;top:-6px;right:-10px;background:#000;color:#fff;
-  border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;
-  align-items:center;justify-content:center}
-
-h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
-.rule{height:1px;background:var(--line);margin:0 0 22px}
-label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
-label .req{color:#000}
-label .opt{color:var(--muted);text-transform:none;letter-spacing:.06em;font-size:13px}
-input,select,textarea{width:100%;padding:14px;border:1px solid var(--line);
-  background:#fff;font:inherit;color:var(--ink)}
-input::placeholder,textarea::placeholder{color:#9a9a9a}
-input:focus,select:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.card{border:1px solid var(--line);padding:12px}
-.card .img{aspect-ratio:4/5;background:#f2f2f2;display:flex;align-items:center;
-  justify-content:center;font-size:12px;color:#777;margin-bottom:10px}
-.card .n{font-size:14px}
-.card .p{margin:6px 0 10px}
-.btn{display:block;width:100%;padding:14px;border:1px solid var(--line);
-  background:#fff;font:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.1em}
-.btn:hover{background:#000;color:#fff}
-.btn.primary{background:#000;color:#fff}
-.btn.primary:hover{background:#fff;color:#000}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-
-.toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}
-.toggle button{padding:18px;background:#fff;border:0;border-right:1px solid var(--line);
-  font:inherit;cursor:pointer;text-transform:none}
-.toggle button:last-child{border-right:0}
-.toggle button.on{background:#f3f3f3;box-shadow:inset 0 0 0 2px #000}
-
-.line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}
-.line.total{border-bottom:0;font-size:20px;padding-top:16px}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-.check{display:flex;gap:10px;align-items:flex-start;margin:22px 0;font-size:13px}
-.check input{width:18px;height:18px;margin-top:2px}
-
-#cdek-map{width:100%;height:520px;border:1px solid var(--line);margin-top:14px}
-.err{color:#b00020;font-size:13px;margin-top:8px}
-.pvz{margin-top:10px;font-size:13px;color:#333;border-left:2px solid #000;padding-left:10px}
+  :root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:15px;letter-spacing:.02em}
+  .wrap{max-width:800px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 22px;border-bottom:1px solid var(--line)}
+  .logo{font-weight:700;font-style:italic;font-size:26px;letter-spacing:.06em}
+  h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
+  .rule{height:1px;background:var(--line);margin:0 0 22px}
+  label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
+  label .req{color:#000}
+  input,select,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
+  input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
+  
+  /* Контейнер карты ОБЯЗАТЕЛЬНО должен иметь высоту */
+  #cdek-map { width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; }
+  
+  .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 2px solid #000; padding-left: 10px; }
+  .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; }
+  .btn:hover { background:#fff; color:#000; }
+  .err { color:#b00020; font-size:13px; margin-top:8px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <header>
+    <div class="logo">VENSKO</div>
+  </header>
 
-<header>
-  <div class="logo">VENSKO</div>
-  <nav>
-    <button onclick="scrollTo(0,0)">Каталог</button>
-    <button class="bag" onclick="document.getElementById('checkout').scrollIntoView({behavior:'smooth'})">
-      Корзина <b id="bagCount">0</b>
-    </button>
-  </nav>
-</header>
-
-<h2>Каталог</h2><div class="rule"></div>
-<div class="grid" id="catalog"></div>
-
-<section id="checkout">
   <h2>Контактные данные</h2><div class="rule"></div>
   <label>ФИО <span class="req">*</span></label>
   <input id="fio" placeholder="Иванов Иван Иванович">
   <label>Телефон <span class="req">*</span></label>
   <input id="tel" placeholder="+7 999 123 45 67">
-  <label>Email <span class="req">*</span></label>
-  <input id="mail" placeholder="example@mail.ru">
-  <label>Telegram <span class="opt">(необязательно — для связи)</span></label>
-  <input id="tg" placeholder="@username или t.me/username">
 
-  <h2>Доставка</h2><div class="rule"></div>
-  <label>Страна <span class="req">*</span></label>
-  <select id="country"><option>🇷🇺 Россия</option></select>
-  <label>Город или населённый пункт <span class="req">*</span></label>
-  <input id="city" placeholder="Москва" value="Москва">
-
-  <label>Способ доставки</label>
-  <div class="toggle">
-    <button type="button" class="on" data-set="normal">Обычная доставка</button>
-    <button type="button" data-set="express">Экспресс доставка</button>
-  </div>
-
+  <h2>Доставка СДЭК</h2><div class="rule"></div>
+  <label>Город <span class="req">*</span></label>
+  <input id="city" placeholder="Чебоксары" value="Чебоксары">
+  
+  <!-- Контейнер для виджета -->
   <div id="cdek-map"></div>
-  <div class="pvz" id="pvzInfo">ПВЗ ещё не выбран — кликните по карте или выберите из списка.</div>
+  <div class="pvz-info" id="pvzInfo">Выберите пункт выдачи на карте или из списка справа.</div>
   <div class="err" id="cdekErr"></div>
 
-  <label>Адрес <span class="req">*</span></label>
+  <label>Адрес доставки <span class="req">*</span> (заполняется автоматически)</label>
   <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
 
-  <label>Комментарий к заказу <span class="opt">(необязательно)</span></label>
-  <textarea id="cmt" rows="2" placeholder="Пожелания к заказу, какие вещи нашего бренда у вас уже есть (для Secret Box) или пожелания к доставке"></textarea>
-
-  <h2>Ваш заказ</h2><div class="rule"></div>
-  <div id="cart"></div>
-  <div class="line"><span>Подитог</span><span id="sub">0 ₽</span></div>
-  <div class="line"><span>Доставка (СДЭК)</span><span id="ship">— ₽</span></div>
-  <div class="line total"><span>ИТОГО</span><span id="tot">0 ₽</span></div>
-
-  <label class="check" style="text-transform:none;letter-spacing:0">
-    <input type="checkbox" id="agree">
-    <span>Я согласен с <a href="#">публичной офертой</a> и <a href="#">политикой конфиденциальности</a></span>
-  </label>
-
-  <button class="btn primary" id="payBtn" onclick="pay()">Оплатить</button>
-</section>
+  <button class="btn" onclick="pay()">Оформить заказ</button>
 </div>
 
 <script>
-const PRODUCTS = [
-  {id:'polo', name:'VENSKO HUSTLE POLO',       color:'КОРИЧНЕВЫЙ', price:3400, size:'M/L'},
-  {id:'hood', name:'VENSKO OVERSIZED HOODIE',  color:'ЧЁРНЫЙ',     price:5200, size:'L/XL'},
-  {id:'tee',  name:'VENSKO BASIC TEE',         color:'БЕЛЫЙ',      price:1800, size:'S/M'},
-];
-
-let cart = JSON.parse(localStorage.getItem('vensko_cart')||'{}');
-const save = ()=>localStorage.setItem('vensko_cart', JSON.stringify(cart));
-const fmt = n => n.toLocaleString('ru-RU').replace(/,/g,' ') + ' ₽';
-
-function renderCatalog(){
-  document.getElementById('catalog').innerHTML = PRODUCTS.map(p=>`
-    <div class="card">
-      <div class="img">${p.id.toUpperCase()}</div>
-      <div class="n">${p.name}<br><span class="muted small">(${p.color})</span></div>
-      <div class="p">${fmt(p.price)}</div>
-      <button class="btn" onclick="add('${p.id}')">В корзину</button>
-    </div>`).join('');
-}
-function add(id){ cart[id]=(cart[id]||0)+1; save(); renderCart(); }
-function remove(id){ delete cart[id]; save(); renderCart(); }
-
-function renderCart(){
-  const items = PRODUCTS.filter(p=>cart[p.id]);
-  document.getElementById('bagCount').textContent = Object.values(cart).reduce((a,b)=>a+b,0);
-  document.getElementById('cart').innerHTML = items.length ? items.map(p=>`
-    <div class="line">
-      <span>${p.name} (${p.color})<br>
-        <span class="muted small">Размер: ${p.size} · ${cart[p.id]} шт.</span></span>
-      <span>${fmt(p.price*cart[p.id])} <button onclick="remove('${p.id}')" style="border:0;background:none;cursor:pointer">✕</button></span>
-    </div>`).join('') : '<div class="muted">Корзина пуста — добавьте товар из каталога.</div>';
-  document.getElementById('sub').textContent = fmt(subtotal());
-  recalcTotal();
-}
-function subtotal(){
-  return PRODUCTS.filter(p=>cart[p.id]).reduce((s,p)=>s+p.price*cart[p.id],0);
-}
-
-/* ======= СДЭК ВИДЖЕТ v3 ======= */
-const CDEK = {
-  // ✅ Ваш рабочий URL Cloudflare Worker
+const CDEK_CONFIG = {
   servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
-  apiKey:      '972c2b0a-3090-439e-982f-4692ad4ab994',
-  from:        { country_code:'RU', city:'Новосибирск', code:270 },
-  defaultLocation: [55.751244, 37.618423], // Москва по умолчанию
+  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994',
 };
 
-const TARIFFS = {
-  normal:  { office:[136], door:[137], pickup:[368] },
-  express: { office:[2],   door:[1],   pickup:[]    },
-};
+let chosenAddress = null;
+let chosenTariff = null;
 
-let widget = null, chosenMode = null, chosenTariff = null, chosenAddress = null, deliveryMode = 'normal';
-let geocodeTimer = null;
-
-function buildGoods(){
-  let w = 0;
-  Object.keys(cart).forEach(id => { w += 300 * cart[id]; });
-  return [{ width:15, height:10, length:20, weight: w || 1000 }];
-}
-
-// Геокодинг города через Яндекс API
-async function geocodeCity(cityName) {
+// Инициализация виджета строго по вашей конфигурации из документации
+document.addEventListener('DOMContentLoaded', () => {
   try {
-    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
-    if (pos) {
-      const [lng, lat] = pos.split(' ').map(Number);
-      return [lat, lng];
-    }
-    return null;
-  } catch (err) {
-    console.error('Geocode error:', err);
-    return null;
-  }
-}
-
-async function updateWidgetLocation(cityName) {
-  const coords = await geocodeCity(cityName);
-  if (coords) {
-    CDEK.defaultLocation = coords;
-    mountWidget();
-  }
-}
-
-function mountWidget(){
-  const box = document.getElementById('cdek-map');
-  box.innerHTML = '';
-  chosenMode = null; chosenTariff = null; chosenAddress = null;
-  document.getElementById('pvzInfo').textContent = 'ПВЗ ещё не выбран — кликните по карте или выберите из списка.';
-  document.getElementById('ship').textContent = '— ₽';
-  recalcTotal();
-
-  try{
-    widget = new window.CDEKWidget({
-      from: CDEK.from,
+    new window.CDEKWidget({
+      from: 'Чебоксары',
       root: 'cdek-map',
-      apiKey: CDEK.apiKey,
-      servicePath: CDEK.servicePath,
-      defaultLocation: CDEK.defaultLocation,
+      apiKey: CDEK_CONFIG.apiKey,
+      servicePath: CDEK_CONFIG.servicePath,
+      defaultLocation: 'Чебоксары',
+      canChoose: true,
+      sender: false,
+      fixBounds: 'country',
+      popup: false,
+      debug: false,
+      requirePostcode: false,
       lang: 'rus',
       currency: 'RUB',
-      canChoose: true,
-      goods: buildGoods(),
-      tariffs: TARIFFS[deliveryMode],
-      onReady(){ document.getElementById('cdekErr').textContent = ''; },
-      onCalculate(){ /* расчёт обновился */ },
-      onChoose(mode, tariff, address){
-        chosenMode = mode; chosenTariff = tariff; chosenAddress = address;
+      hideDeliveryOptions: {
+        office: false,
+        door: false
+      },
+      forceFilters: {
+        have_cashless: true,
+        have_cash: null,
+        is_dressing_room: null,
+        allowed_cod: null,
+        type: null
+      },
+      hideFilters: {
+        have_cashless: false,
+        have_cash: true,
+        is_dressing_room: false,
+        type: false
+      },
+      // Событие выбора ПВЗ или курьерской доставки
+      onChoose: (mode, tariff, address) => {
+        chosenTariff = tariff;
+        chosenAddress = address;
         
         let addrText = '';
-        let pvzName = 'Доставка';
-        
+        let name = 'Доставка';
+
         if (address) {
           if (address.PVZ) {
-            pvzName = address.PVZ.Name || 'ПВЗ';
+            // Выбран пункт выдачи
+            name = address.PVZ.Name || 'ПВЗ СДЭК';
             addrText = address.PVZ.Address || '';
           } else if (address.address) {
+            // Выбрана курьерская доставка
+            name = 'Курьерская доставка';
             addrText = address.address;
-            pvzName = 'Курьерская доставка';
-          } else {
-            addrText = JSON.stringify(address);
           }
         }
-        
-        // ✅ Автозаполнение поля "Адрес"
+
+        // АВТОЗАПОЛНЕНИЕ поля адреса
         if (addrText) {
           document.getElementById('addr').value = addrText;
         }
+
+        document.getElementById('pvzInfo').innerHTML = 
+          `<b>${name}</b><br>${addrText}<br><span style="color:#8a8a8a">Тариф: ${tariff?.tariff_name || 'Не выбран'} · ${tariff?.delivery_sum || 0} ₽</span>`;
         
-        document.getElementById('pvzInfo').innerHTML =
-          `<b>${pvzName}</b><br>${addrText}<br><span class="muted small">Режим: ${mode==='door'?'до двери':'до ПВЗ'} · ${tariff?.tariff_name||''}</span>`;
-        recalcTotal();
+        document.getElementById('cdekErr').textContent = '';
       },
+      onError: (e) => {
+        document.getElementById('cdekErr').textContent = 'Ошибка виджета: ' + (e.message || JSON.stringify(e));
+      }
     });
-  }catch(err){
-    document.getElementById('cdekErr').textContent = 'Не удалось инициализировать виджет: ' + err.message;
-  }
-}
-
-// ✅ Автопоиск города при вводе (с задержкой 1 сек)
-document.getElementById('city').addEventListener('input', (e) => {
-  clearTimeout(geocodeTimer);
-  const cityName = e.target.value.trim();
-  if (cityName.length < 3) return;
-  geocodeTimer = setTimeout(() => updateWidgetLocation(cityName), 1000);
-});
-
-document.getElementById('city').addEventListener('blur', (e) => {
-  clearTimeout(geocodeTimer);
-  const cityName = e.target.value.trim();
-  if (cityName.length >= 3) updateWidgetLocation(cityName);
-});
-
-document.getElementById('city').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    clearTimeout(geocodeTimer);
-    const cityName = e.target.value.trim();
-    if (cityName.length >= 3) updateWidgetLocation(cityName);
+  } catch (err) {
+    document.getElementById('cdekErr').textContent = 'Не удалось загрузить виджет: ' + err.message;
   }
 });
 
-document.querySelectorAll('.toggle button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('.toggle button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    deliveryMode = b.dataset.set;
-    mountWidget();
-  });
-});
+function pay() {
+  const fio = document.getElementById('fio').value.trim();
+  const tel = document.getElementById('tel').value.trim();
+  const addr = document.getElementById('addr').value.trim();
 
-function recalcTotal(){
-  const sub = subtotal();
-  const ship = chosenTariff ? (chosenTariff.delivery_sum || 0) : 0;
-  document.getElementById('ship').textContent = ship ? fmt(ship) : '— ₽';
-  document.getElementById('tot').textContent  = fmt(sub + ship);
-}
+  if (!fio || !tel) { alert('Заполните ФИО и телефон'); return; }
+  if (!chosenTariff) { alert('Пожалуйста, выберите способ доставки на карте СДЭК'); return; }
+  if (!addr) { alert('Адрес доставки не указан'); return; }
 
-function pay(){
-  const g = id => document.getElementById(id).value.trim();
-  for(const f of ['fio','tel','mail']) if(!g(f)){ alert('Заполните поле '+f); return; }
-  if(!Object.keys(cart).length){ alert('Корзина пуста'); return; }
-  if(!document.getElementById('agree').checked){ alert('Нужно согласие с офертой'); return; }
-  if(!chosenTariff){ alert('Выберите способ доставки в виджете СДЭК'); return; }
-
-  const order = {
-    customer:{ fio:g('fio'), tel:g('tel'), mail:g('mail'), tg:g('tg') },
-    delivery:{ mode:chosenMode, tariff:chosenTariff, address:chosenAddress,
-               city:g('city'), addressText:g('addr'), comment:g('cmt') },
-    items: PRODUCTS.filter(p=>cart[p.id]).map(p=>({...p, qty:cart[p.id]})),
-    subtotal: subtotal(),
-    shipping: chosenTariff.delivery_sum || 0,
-    total: subtotal() + (chosenTariff.delivery_sum || 0),
+  const orderData = {
+    customer: { fio, tel },
+    delivery: {
+      tariff: chosenTariff,
+      addressDetails: chosenAddress,
+      finalAddress: addr
+    }
   };
-  console.log('ORDER PAYLOAD →', order);
-  alert('Заказ сформирован (демо). Данные заказа выведены в консоль (F12).');
+  
+  console.log('ГОТОВЫЙ ЗАКАЗ:', orderData);
+  alert('Заказ успешно сформирован! Данные выведены в консоль (F12).');
 }
-
-renderCatalog(); renderCart();
-window.addEventListener('DOMContentLoaded', mountWidget);
 </script>
 </body>
 </html>
