@@ -16,16 +16,15 @@
   .rule{height:1px;background:var(--line);margin:0 0 22px}
   label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
   label .req{color:#000}
+  label .hint{color:var(--muted);text-transform:none;letter-spacing:.02em;font-size:12px;margin-left:8px}
   input,select,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
   input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
   
-  /* Контейнер карты ОБЯЗАТЕЛЬНО должен иметь высоту */
   #cdek-map { width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; }
-  
-  .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 2px solid #000; padding-left: 10px; }
-  .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; }
+  .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 3px solid #000; padding-left: 12px; background: #f9f9f9; padding: 12px; }
+  .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; font-weight: bold; }
   .btn:hover { background:#fff; color:#000; }
-  .err { color:#b00020; font-size:13px; margin-top:8px; }
+  .err { color:#b00020; font-size:13px; margin-top:8px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -41,15 +40,21 @@
   <input id="tel" placeholder="+7 999 123 45 67">
 
   <h2>Доставка СДЭК</h2><div class="rule"></div>
-  <label>Город <span class="req">*</span></label>
-  <input id="city" placeholder="Чебоксары" value="Чебоксары">
   
-  <!-- Контейнер для виджета -->
+  <!-- Внешнее поле города оставляем для формы, но рекомендуем использовать поиск ВНУТРИ карты -->
+  <label>Город получателя <span class="req">*</span> <span class="hint">(лучше искать через поиск внутри карты ниже)</span></label>
+  <input id="city" placeholder="Например: Чебоксары" value="Чебоксары">
+  
   <div id="cdek-map"></div>
-  <div class="pvz-info" id="pvzInfo">Выберите пункт выдачи на карте или из списка справа.</div>
   <div class="err" id="cdekErr"></div>
+  
+  <div class="pvz-info" id="pvzInfo" style="display:none;">
+    <b id="pvzName"></b><br>
+    <span id="pvzAddress"></span><br>
+    <span style="color:#000; font-weight:bold; margin-top:6px; display:block;" id="pvzTariff"></span>
+  </div>
 
-  <label>Адрес доставки <span class="req">*</span> (заполняется автоматически)</label>
+  <label>Адрес доставки <span class="req">*</span> <span class="hint">(заполняется автоматически при выборе на карте)</span></label>
   <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
 
   <button class="btn" onclick="pay()">Оформить заказ</button>
@@ -61,13 +66,12 @@ const CDEK_CONFIG = {
   apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994',
 };
 
-let chosenAddress = null;
 let chosenTariff = null;
+let chosenPvz = null;
 
-// Инициализация виджета строго по вашей конфигурации из документации
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    new window.CDEKWidget({
+    const widget = new window.CDEKWidget({
       from: 'Чебоксары',
       root: 'cdek-map',
       apiKey: CDEK_CONFIG.apiKey,
@@ -81,55 +85,49 @@ document.addEventListener('DOMContentLoaded', () => {
       requirePostcode: false,
       lang: 'rus',
       currency: 'RUB',
-      hideDeliveryOptions: {
-        office: false,
-        door: false
-      },
-      forceFilters: {
-        have_cashless: true,
-        have_cash: null,
-        is_dressing_room: null,
-        allowed_cod: null,
-        type: null
-      },
-      hideFilters: {
-        have_cashless: false,
-        have_cash: true,
-        is_dressing_room: false,
-        type: false
-      },
-      // Событие выбора ПВЗ или курьерской доставки
-      onChoose: (mode, tariff, address) => {
+      hideDeliveryOptions: { office: false, door: false },
+      forceFilters: { have_cashless: true, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
+      hideFilters: { have_cashless: false, have_cash: true, is_dressing_room: false, type: false },
+      
+      // ГЛАВНОЕ ИСПРАВЛЕНИЕ: корректный разбор аргументов onChoose
+      onChoose: function(profile, tariff, pvz) {
+        console.log('СДЭК Выбор:', profile, tariff, pvz); // Для отладки в консоли
+        
         chosenTariff = tariff;
-        chosenAddress = address;
+        chosenPvz = pvz;
         
         let addrText = '';
-        let name = 'Доставка';
+        let nameText = 'Доставка';
 
-        if (address) {
-          if (address.PVZ) {
-            // Выбран пункт выдачи
-            name = address.PVZ.Name || 'ПВЗ СДЭК';
-            addrText = address.PVZ.Address || '';
-          } else if (address.address) {
-            // Выбрана курьерская доставка
-            name = 'Курьерская доставка';
-            addrText = address.address;
+        if (profile === 'office' && pvz) {
+          nameText = pvz.name || 'Пункт выдачи СДЭК';
+          // Берем адрес из разных возможных полей ответа виджета
+          addrText = pvz.address || (pvz.location && pvz.location.address_full) || '';
+          
+          // Синхронизируем внешнее поле города с выбранным городом ПВЗ
+          if (pvz.location && pvz.location.city) {
+            document.getElementById('city').value = pvz.location.city;
           }
+        } else if (profile === 'door' && pvz) {
+          nameText = 'Курьерская доставка';
+          addrText = pvz.address || '';
         }
 
-        // АВТОЗАПОЛНЕНИЕ поля адреса
+        // Заполняем поля на странице
         if (addrText) {
           document.getElementById('addr').value = addrText;
         }
-
-        document.getElementById('pvzInfo').innerHTML = 
-          `<b>${name}</b><br>${addrText}<br><span style="color:#8a8a8a">Тариф: ${tariff?.tariff_name || 'Не выбран'} · ${tariff?.delivery_sum || 0} ₽</span>`;
         
+        document.getElementById('pvzName').textContent = nameText;
+        document.getElementById('pvzAddress').textContent = addrText;
+        document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
+        document.getElementById('pvzInfo').style.display = 'block';
         document.getElementById('cdekErr').textContent = '';
       },
-      onError: (e) => {
-        document.getElementById('cdekErr').textContent = 'Ошибка виджета: ' + (e.message || JSON.stringify(e));
+
+      onError: function(e) {
+        console.error('СДЭК Ошибка:', e);
+        document.getElementById('cdekErr').textContent = 'Ошибка загрузки СДЭК: ' + (e.message || JSON.stringify(e));
       }
     });
   } catch (err) {
@@ -141,22 +139,27 @@ function pay() {
   const fio = document.getElementById('fio').value.trim();
   const tel = document.getElementById('tel').value.trim();
   const addr = document.getElementById('addr').value.trim();
+  const city = document.getElementById('city').value.trim();
 
   if (!fio || !tel) { alert('Заполните ФИО и телефон'); return; }
-  if (!chosenTariff) { alert('Пожалуйста, выберите способ доставки на карте СДЭК'); return; }
-  if (!addr) { alert('Адрес доставки не указан'); return; }
+  if (!city) { alert('Укажите город доставки'); return; }
+  if (!chosenTariff) { alert('Пожалуйста, выберите пункт выдачи или способ доставки на карте СДЭК'); return; }
+  if (!addr) { alert('Адрес доставки не заполнен. Выберите ПВЗ на карте.'); return; }
 
   const orderData = {
     customer: { fio, tel },
     delivery: {
-      tariff: chosenTariff,
-      addressDetails: chosenAddress,
-      finalAddress: addr
+      city: city,
+      address: addr,
+      tariffCode: chosenTariff.tariff_code,
+      tariffName: chosenTariff.tariff_name,
+      deliverySum: chosenTariff.delivery_sum,
+      pvzCode: chosenPvz ? (chosenPvz.code || chosenPvz.location?.code) : null
     }
   };
   
-  console.log('ГОТОВЫЙ ЗАКАЗ:', orderData);
-  alert('Заказ успешно сформирован! Данные выведены в консоль (F12).');
+  console.log('✅ ГОТОВЫЙ ЗАКАЗ К ОТПРАВКЕ:', orderData);
+  alert('Заказ успешно сформирован!\n\nГород: ' + city + '\nАдрес: ' + addr + '\nДоставка: ' + chosenTariff.delivery_sum + ' ₽\n\n(Данные выведены в консоль F12)');
 }
 </script>
 </body>
