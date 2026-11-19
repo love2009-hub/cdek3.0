@@ -4,14 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VENSKO — Оформление заказа СДЭК</title>
-<!-- Виджет СДЭК версии 4 -->
+<!-- Подключение виджета СДЭК версии 4 -->
 <script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+  body { font-family: "IBM Plex Mono", monospace; max-width: 900px; margin: 0 auto; padding: 20px; color: #000; }
   /* Высота обязательна по инструкции, иначе виджет не будет виден! */
-  #cdek-map { width: 100%; height: 600px; border: 1px solid #ccc; margin-top: 20px; }
+  #cdek-map { width: 100%; height: 600px; border: 1px solid #111; margin-top: 20px; }
   .result-box { margin-top: 20px; padding: 15px; background: #f4f4f4; border-left: 4px solid #000; display: none; }
-  h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  h2 { border-bottom: 1px solid #111; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .label { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
+  .value { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -21,14 +23,19 @@
 <!-- Элемент, в который будет встроен виджет -->
 <div id="cdek-map"></div>
 
-<!-- Блок для вывода результата выбора -->
+<!-- Блок для вывода результата выбора (из onChoose) -->
 <div class="result-box" id="resultBox">
-  <h3>Выбранная доставка:</h3>
-  <p><b>Режим:</b> <span id="resMode"></span></p>
-  <p><b>Тариф:</b> <span id="resTariff"></span></p>
-  <p><b>Стоимость:</b> <span id="resPrice"></span> ₽</p>
-  <p><b>Срок:</b> <span id="resPeriod"></span> дн.</p>
-  <p><b>Адрес/ПВЗ:</b> <span id="resAddress"></span></p>
+  <div class="label">Режим доставки</div>
+  <div class="value" id="resMode"></div>
+  
+  <div class="label">Тариф</div>
+  <div class="value" id="resTariff"></div>
+  
+  <div class="label">Стоимость и срок</div>
+  <div class="value"><span id="resPrice"></span> ₽ (<span id="resPeriod"></span> дн.)</div>
+  
+  <div class="label">Адрес / ПВЗ</div>
+  <div class="value" id="resAddress"></div>
 </div>
 
 <script type="text/javascript">
@@ -44,8 +51,8 @@
       apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
       canChoose: true,
       
-      // ⚠️ ЗАМЕНИТЕ ЭТУ СТРОКУ НА ВАШ РЕАЛЬНЫЙ URL CLOUDFLARE WORKER
-      servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
+      // ⚠️ ЗАМЕНИТЕ ЭТУ СТРОКУ НА ВАШ РЕАЛЬНЫЙ URL CLOUDFLARE WORKER ИЗ ШАГА 1
+      servicePath: 'https://ВАШ_URL_CLOUDFLARE_WORKER.workers.dev',
       
       hideFilters: {
         have_cashless: false,
@@ -59,7 +66,7 @@
       },
       debug: false,
       
-      // Габариты посылки (вес указан 1000г = 1кг, чтобы тарифы считались корректно)
+      // Габариты посылки (вес 1000г = 1кг для корректного расчета тарифов)
       goods: [
         {
           width: 10,
@@ -92,14 +99,14 @@
         
         // Отображаем выбранные данные на странице
         document.getElementById('resultBox').style.display = 'block';
-        document.getElementById('resMode').textContent = mode === 'office' ? 'До ПВЗ' : 'До двери';
+        document.getElementById('resMode').textContent = mode === 'office' ? 'До ПВЗ (office)' : 'До двери (door)';
         document.getElementById('resTariff').textContent = tariff.tariff_name;
         document.getElementById('resPrice').textContent = tariff.delivery_sum;
         document.getElementById('resPeriod').textContent = `${tariff.period_min} - ${tariff.period_max}`;
         
         let addrText = '';
         if (mode === 'office' && address) {
-          addrText = `${address.name}, ${address.address}`;
+          addrText = `${address.name || 'ПВЗ'}, ${address.address || ''}`;
         } else if (mode === 'door' && address) {
           addrText = address.formatted || address.address || 'Адрес не указан';
         }
