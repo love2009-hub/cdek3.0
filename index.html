@@ -4,202 +4,185 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VENSKO — Оформление заказа</title>
-<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@3" charset="utf-8"></script>
+<!-- Виджет СДЭК версии 4.0 -->
+<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
 <style>
   :root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:15px;letter-spacing:.02em}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:15px}
   .wrap{max-width:800px;margin:0 auto;padding:24px 20px 80px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 22px;border-bottom:1px solid var(--line)}
-  .logo{font-weight:700;font-style:italic;font-size:26px;letter-spacing:.06em}
-  h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
+  header{display:flex;justify-content:space-between;padding:18px 0 22px;border-bottom:1px solid var(--line)}
+  .logo{font-weight:700;font-style:italic;font-size:26px}
+  h2{font-size:18px;margin:38px 0 6px;text-transform:uppercase;letter-spacing:.1em}
   .rule{height:1px;background:var(--line);margin:0 0 22px}
-  label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
-  label .req{color:#000}
-  input,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
+  label{display:block;font-size:14px;text-transform:uppercase;margin:18px 0 8px;letter-spacing:.1em}
+  input,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit}
   input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
   
-  /* Стили для кнопки поиска города */
-  .find-btn {
-    display: block;
-    width: 100%;
-    margin-top: 8px;
-    padding: 10px;
-    background: #f4f4f4;
-    border: 1px solid var(--line);
-    font-family: inherit;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .find-btn:hover {
-    background: #000;
-    color: #fff;
-  }
-  .find-btn:active {
-    transform: scale(0.98);
-  }
-
-  #cdek-map { width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; }
-  .pvz-info { margin-top: 10px; font-size: 13px; color: #333; border-left: 3px solid #000; padding: 12px; background: #f9f9f9; display: none; }
-  .btn { display:block; width:100%; padding:16px; border:1px solid var(--line); background:#000; color:#fff; font:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; margin-top: 24px; font-weight: bold; }
-  .btn:hover { background:#fff; color:#000; }
-  .err { color:#b00020; font-size:13px; margin-top:8px; font-weight: bold; }
-  .cart-item { display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .find-btn{display:block;width:100%;margin-top:8px;padding:10px;background:#f4f4f4;border:1px solid var(--line);font:inherit;text-transform:uppercase;cursor:pointer}
+  .find-btn:hover{background:#000;color:#fff}
+  
+  /* Высота обязательна по инструкции! */
+  #cdek-map{width:100%;height:600px;border:1px solid var(--line);margin-top:14px}
+  
+  .pvz-info{margin-top:10px;padding:12px;background:#f9f9f9;border-left:3px solid #000;display:none}
+  .btn{display:block;width:100%;padding:16px;background:#000;color:#fff;border:1px solid var(--line);font:inherit;text-transform:uppercase;cursor:pointer;margin-top:24px;font-weight:bold}
+  .btn:hover{background:#fff;color:#000}
+  .err{color:#b00020;font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="logo">VENSKO</div>
-  </header>
+  <header><div class="logo">VENSKO</div></header>
 
   <h2>Корзина</h2><div class="rule"></div>
-  <div id="cart-list">
-    <div class="cart-item"><span>VENSKO HUSTLE POLO (Коричневый, M/L)</span><span>3 400 ₽</span></div>
-    <div class="cart-item"><span>VENSKO OVERSIZED HOODIE (Чёрный, L/XL)</span><span>5 200 ₽</span></div>
+  <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line)">
+    <span>VENSKO HUSTLE POLO + OVERSIZED HOODIE</span><span>8 600 ₽</span>
   </div>
-  <div style="text-align:right; margin-top:12px; font-size:18px;"><b>Товары: <span id="goods-sum">8 600</span> ₽</b></div>
 
   <h2>Контактные данные</h2><div class="rule"></div>
-  <label>ФИО <span class="req">*</span></label>
-  <input id="fio" placeholder="Иванов Иван Иванович">
-  <label>Телефон <span class="req">*</span></label>
-  <input id="tel" placeholder="+7 999 123 45 67">
+  <label>ФИО *</label><input id="fio" placeholder="Иванов Иван Иванович">
+  <label>Телефон *</label><input id="tel" placeholder="+7 999 123 45 67">
 
   <h2>Доставка СДЭК</h2><div class="rule"></div>
-  
-  <label>Город получателя <span class="req">*</span></label>
+  <label>Город получателя *</label>
   <input id="city" placeholder="Например: Чебоксары" value="Чебоксары">
-  <!-- КНОПКА ПОИСКА -->
   <button type="button" id="findCityBtn" class="find-btn">🔍 Найти на карте</button>
-  
+
+  <!-- Контейнер виджета -->
   <div id="cdek-map"></div>
   <div class="err" id="cdekErr"></div>
-  
+
   <div class="pvz-info" id="pvzInfo">
-    <b id="pvzName"></b><br>
-    <span id="pvzAddress"></span><br>
-    <span style="color:#000; font-weight:bold; margin-top:6px; display:block;" id="pvzTariff"></span>
+    <b id="pvzName"></b><br><span id="pvzAddress"></span><br>
+    <span style="font-weight:bold;margin-top:6px;display:block" id="pvzTariff"></span>
   </div>
 
-  <label>Адрес доставки <span class="req">*</span></label>
-  <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
+  <label>Адрес доставки *</label>
+  <textarea id="addr" rows="2" placeholder="Заполнится автоматически при выборе на карте"></textarea>
 
-  <div style="text-align:right; margin-top:24px; font-size:22px;">
-    <b>ИТОГО: <span id="total-sum">8 600</span> ₽</b>
-  </div>
-
+  <div style="text-align:right;margin-top:24px;font-size:22px"><b>ИТОГО: <span id="total-sum">8 600</span> ₽</b></div>
   <button class="btn" onclick="pay()">Оформить заказ</button>
 </div>
 
 <script>
+// КОНФИГУРАЦИЯ
 const CDEK_CONFIG = {
-  servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
-  // ⚠️ ВСТАВЬТЕ СЮДА НОВЫЙ КЛЮЧ ЯНДЕКСА ("JavaScript API и HTTP Геокодер")
-  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994', 
+  // ВСТАВЬТЕ СЮДА URL ВАШЕГО CLOUDFLARE WORKER ИЗ ШАГА 1
+  servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
+  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994'
 };
 
-let chosenTariff = null, chosenPvz = null;
+let chosenTariff = null, chosenAddress = null;
 let currentCity = 'Чебоксары';
-let currentCoords = [56.12684, 47.388736];
+let currentCoords = [56.12684, 47.388736]; // Чебоксары по умолчанию
 const GOODS_SUM = 8600;
 
-// Функция инициализации виджета
-function initWidget(city, coords){
-  const box = document.getElementById('cdek-map');
-  box.innerHTML = ''; // Очищаем старую карту перед перерисовкой
+// Инициализация виджета строго по инструкции v4.0
+function initWidget(city, coords) {
+  document.getElementById('cdek-map').innerHTML = ''; // Очистка перед перерисовкой
   
-  try{
+  try {
     new window.CDEKWidget({
-      from: 'Чебоксары',
-      to: city,
+      from: {
+        country_code: 'RU',
+        city: 'Новосибирск',
+        postal_code: 630009,
+        code: 270,
+        address: 'ул. Большевистская, д. 101',
+      },
       root: 'cdek-map',
       apiKey: CDEK_CONFIG.apiKey,
-      servicePath: CDEK_CONFIG.servicePath,
-      defaultLocation: coords,
       canChoose: true,
-      sender: false,
-      fixBounds: 'country',
-      popup: false,
+      servicePath: CDEK_CONFIG.servicePath,
+      hideFilters: {
+        have_cashless: false,
+        have_cash: false,
+        is_dressing_room: false,
+        type: false,
+      },
+      hideDeliveryOptions: {
+        office: false,
+        door: false,
+      },
       debug: false,
-      requirePostcode: false,
+      // Обязательно для расчета!
+      goods: [{ width: 15, height: 10, length: 20, weight: 1000 }],
+      defaultLocation: coords,
       lang: 'rus',
       currency: 'RUB',
-      hideDeliveryOptions: { office: false, door: false },
-      forceFilters: { have_cashless: true, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
-      hideFilters: { have_cashless: false, have_cash: true, is_dressing_room: false, type: false },
-      // Обязательно для расчета тарифов!
-      goods: [{ width: 15, height: 10, length: 20, weight: 1000 }],
-      
-      onChoose(profile, tariff, pvz){
-        chosenTariff = tariff; 
-        chosenPvz = pvz;
-        let addrText = '', nameText = 'Доставка';
+      tariffs: {
+        office: [136, 138, 368], // Посылка склад-склад, дверь-склад, склад-постамат
+        door: [137, 139],        // Посылка склад-дверь, дверь-дверь
+      },
+      onReady() {
+        document.getElementById('cdekErr').textContent = '';
+      },
+      onCalculate() {
+        // Расчет произведен, ждем выбора пользователя
+      },
+      onChoose(mode, tariff, address) {
+        chosenTariff = tariff;
+        chosenAddress = address;
         
-        if (profile === 'office' && pvz){ 
-          nameText = pvz.name || 'ПВЗ СДЭК'; 
-          addrText = pvz.address || (pvz.location && pvz.location.address_full) || ''; 
-        } else if (profile === 'door' && pvz){ 
-          nameText = 'Курьерская доставка'; 
-          addrText = pvz.address || ''; 
+        let addrText = '';
+        let nameText = 'Доставка';
+
+        if (mode === 'office' && address) {
+          nameText = address.name || 'ПВЗ СДЭК';
+          addrText = address.address || '';
+          if (address.city) document.getElementById('city').value = address.city;
+        } else if (mode === 'door' && address) {
+          nameText = 'Курьерская доставка';
+          addrText = address.formatted || address.address || '';
         }
-        
-        if (addrText) document.getElementById('addr').value = addrText;
-        
+
+        if (addrText) {
+          document.getElementById('addr').value = addrText;
+        }
+
         document.getElementById('pvzName').textContent = nameText;
         document.getElementById('pvzAddress').textContent = addrText;
-        document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
+        document.getElementById('pvzTariff').textContent = tariff ? 
+          `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
         document.getElementById('pvzInfo').style.display = 'block';
-        document.getElementById('cdekErr').textContent = '';
+        
         updateTotal();
-      },
-      onError(e){ 
-        document.getElementById('cdekErr').textContent = 'Ошибка СДЭК: ' + (e && e.message || JSON.stringify(e)); 
       }
     });
-  }catch(err){ 
-    document.getElementById('cdekErr').textContent = 'Не удалось загрузить виджет: ' + err.message; 
+  } catch (err) {
+    document.getElementById('cdekErr').textContent = 'Ошибка виджета: ' + err.message;
   }
 }
 
-// Функция поиска города через Яндекс и перерисовки виджета
-async function geocodeAndMove(cityName){
-  document.getElementById('cdekErr').textContent = 'Поиск города...';
-  try{
+// Поиск города через Яндекс Геокодер
+async function geocodeAndMove(cityName) {
+  document.getElementById('cdekErr').textContent = 'Поиск...';
+  try {
     const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK_CONFIG.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
     const data = await (await fetch(url)).json();
     const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
     
-    if (pos){
+    if (pos) {
       const [lng, lat] = pos.split(' ').map(Number);
-      currentCity = cityName; 
+      currentCity = cityName;
       currentCoords = [lat, lng];
-      document.getElementById('city').value = cityName; // Обновляем поле, если пользователь ввел с маленькой буквы
-      document.getElementById('cdekErr').textContent = ''; 
-      initWidget(currentCity, currentCoords); // Перерисовываем виджет с новыми координатами
+      document.getElementById('city').value = cityName;
+      document.getElementById('cdekErr').textContent = '';
+      initWidget(currentCity, currentCoords);
     } else {
       document.getElementById('cdekErr').textContent = 'Город не найден. Проверьте название.';
     }
-  }catch(err){ 
-    console.error('Geocode error:', err); 
-    document.getElementById('cdekErr').textContent = 'Ошибка поиска. Проверьте ключ API Яндекса.';
+  } catch (err) {
+    document.getElementById('cdekErr').textContent = 'Ошибка геокодера. Проверьте ключ Яндекса (403).';
   }
 }
 
-// Привязываем кнопку "Найти" к функции поиска
+// Обработчики кнопки и Enter
 document.getElementById('findCityBtn').addEventListener('click', () => {
   const val = document.getElementById('city').value.trim();
-  if (val.length > 2) {
-    geocodeAndMove(val);
-  } else {
-    document.getElementById('cdekErr').textContent = 'Введите название города (минимум 3 символа)';
-  }
+  if (val.length > 2) geocodeAndMove(val);
 });
-
-// Также оставляем поддержку клавиши Enter для удобства
 document.getElementById('city').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -207,36 +190,29 @@ document.getElementById('city').addEventListener('keydown', (e) => {
   }
 });
 
-function updateTotal(){
-  const deliverySum = chosenTariff ? chosenTariff.delivery_sum : 0;
-  document.getElementById('total-sum').textContent = (GOODS_SUM + deliverySum).toLocaleString('ru-RU');
+function updateTotal() {
+  const sum = chosenTariff ? (GOODS_SUM + chosenTariff.delivery_sum) : GOODS_SUM;
+  document.getElementById('total-sum').textContent = sum.toLocaleString('ru-RU');
 }
 
-function pay(){
-  const fio = document.getElementById('fio').value.trim();
-  const tel = document.getElementById('tel').value.trim();
-  const addr = document.getElementById('addr').value.trim();
+function pay() {
+  if (!document.getElementById('fio').value.trim() || !document.getElementById('tel').value.trim()) {
+    return alert('Заполните ФИО и телефон');
+  }
+  if (!chosenTariff) return alert('Выберите способ доставки на карте');
+  if (!document.getElementById('addr').value.trim()) return alert('Адрес не заполнен');
 
-  if (!fio || !tel) { alert('Заполните ФИО и телефон'); return; }
-  if (!chosenTariff) { alert('Пожалуйста, выберите пункт выдачи на карте СДЭК'); return; }
-  if (!addr) { alert('Адрес доставки не заполнен'); return; }
-
-  const orderData = {
-    customer: { fio, tel },
-    delivery: {
-      city: currentCity,
-      address: addr,
-      tariffName: chosenTariff.tariff_name,
-      deliverySum: chosenTariff.delivery_sum
-    },
-    total: GOODS_SUM + chosenTariff.delivery_sum
+  const order = {
+    city: currentCity,
+    address: document.getElementById('addr').value,
+    tariff: chosenTariff.tariff_name,
+    total: document.getElementById('total-sum').textContent + ' ₽'
   };
-  
-  console.log('✅ ГОТОВЫЙ ЗАКАЗ:', orderData);
-  alert('Заказ сформирован!\nГород: ' + currentCity + '\nДоставка: ' + chosenTariff.deliverySum + ' ₽\nИтого: ' + orderData.total + ' ₽');
+  console.log('ЗАКАЗ:', order);
+  alert('Заказ оформлен!\nДоставка: ' + chosenTariff.delivery_sum + ' ₽\nИтого: ' + order.total);
 }
 
-// Запуск при загрузке страницы
+// Запуск при загрузке
 document.addEventListener('DOMContentLoaded', () => {
   initWidget(currentCity, currentCoords);
 });
