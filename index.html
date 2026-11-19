@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>VENSKO — Магазин одежды</title>
 
 <!-- Виджет СДЭК v4 -->
@@ -10,6 +10,8 @@
 
 <style>
   :root { --primary: #000; --bg: #fff; --gray: #f4f4f4; }
+  * { box-sizing: border-box; }
+  
   body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; color: var(--primary); background: var(--bg); }
   .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
   
@@ -25,6 +27,7 @@
   .price { font-size: 22px; font-weight: bold; margin: 15px 0; }
   .btn { background: var(--primary); color: #fff; border: none; padding: 14px 24px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: 100%; border-radius: 4px; font-size: 14px; }
   .btn:hover { background: #333; }
+  .btn:active { transform: scale(0.98); }
 
   .checkout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; margin-top: 40px; border-top: 2px solid var(--primary); padding-top: 30px; }
   
@@ -33,15 +36,44 @@
   .remove-btn { border: none; background: none; cursor: pointer; color: #d32f2f; font-size: 18px; padding: 0 5px; }
   .total { font-size: 24px; font-weight: bold; margin-top: 20px; text-align: right; }
 
-  /* Адаптация виджета и мобильная версия */
-  #cdek-map { width: 100%; height: 600px; border: 1px solid #ccc; border-radius: 8px; margin-top: 20px; overflow: hidden; }
+  #cdek-map { 
+    width: 100%; 
+    max-width: 100%;
+    height: 500px;
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    margin-top: 20px; 
+    overflow: hidden;
+    position: relative; 
+  }
+  
+  #cdek-map iframe {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    border: none;
+  }
+
   .delivery-info { margin-top: 15px; padding: 15px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px; display: none; }
 
   @media (max-width: 768px) {
+    .container { padding: 15px; }
     .checkout { grid-template-columns: 1fr; gap: 30px; }
-    #cdek-map { height: 500px; } /* Уменьшаем высоту карты на мобильных */
+    
+    #cdek-map { 
+      height: 400px;
+      margin-top: 15px; 
+    }
+    
     .product-img { height: 180px; }
     h1 { font-size: 24px; }
+  }
+
+  @media (max-width: 480px) {
+    #cdek-map {
+      height: 350px;
+    }
+    .btn { padding: 12px 20px; font-size: 13px; }
   }
 </style>
 </head>
@@ -54,7 +86,6 @@
   </header>
 
   <div class="products">
-    <!-- Товар 1 -->
     <div class="product">
       <div class="product-img">👕</div>
       <h3>VENSKO Basic Tee</h3>
@@ -62,7 +93,6 @@
       <div class="price">1 800 ₽</div>
       <button class="btn" onclick="addToCart(1)">В корзину</button>
     </div>
-    <!-- Товар 2 -->
     <div class="product">
       <div class="product-img">🧥</div>
       <h3>VENSKO Oversized Hoodie</h3>
@@ -70,7 +100,6 @@
       <div class="price">5 200 ₽</div>
       <button class="btn" onclick="addToCart(2)">В корзину</button>
     </div>
-    <!-- Товар 3 -->
     <div class="product">
       <div class="product-img">👖</div>
       <h3>VENSKO Cargo Pants</h3>
@@ -89,7 +118,7 @@
 
     <div>
       <h2>Доставка СДЭК</h2>
-      <p style="font-size: 14px; color: #666;">Добавьте товары в корзину, выберите город в поиске виджета и кликните на пункт выдачи.</p>
+      <p style="font-size: 14px; color: #666;">Добавьте товары, введите город в поиске виджета и выберите пункт выдачи.</p>
       
       <div id="cdek-map"></div>
       
@@ -103,11 +132,33 @@
 </div>
 
 <script>
-  // База данных товаров с реальными габаритами (вес в граммах, размеры в см)
+  // База данных товаров с РЕАЛЬНЫМИ ГАБАРИТАМИ
+  // weight: вес в граммах, length/width/height: размеры в сантиметрах
   const productsDB = {
-    1: { name: 'VENSKO Basic Tee', price: 1800, weight: 200, length: 25, width: 20, height: 2 },
-    2: { name: 'VENSKO Oversized Hoodie', price: 5200, weight: 600, length: 35, width: 30, height: 5 },
-    3: { name: 'VENSKO Cargo Pants', price: 4500, weight: 500, length: 35, width: 25, height: 4 }
+    1: { 
+      name: 'VENSKO Basic Tee', 
+      price: 1800, 
+      weight: 200,      // 200 грамм
+      length: 25,       // 25 см длина
+      width: 20,        // 20 см ширина
+      height: 2         // 2 см высота (сложенная)
+    },
+    2: { 
+      name: 'VENSKO Oversized Hoodie', 
+      price: 5200, 
+      weight: 600,      // 600 грамм
+      length: 35,       // 35 см длина
+      width: 30,        // 30 см ширина
+      height: 5         // 5 см высота (сложенное)
+    },
+    3: { 
+      name: 'VENSKO Cargo Pants', 
+      price: 4500, 
+      weight: 500,      // 500 грамм
+      length: 35,       // 35 см длина
+      width: 25,        // 25 см ширина
+      height: 4         // 4 см высота (сложенные)
+    }
   };
 
   let cart = [];
@@ -116,7 +167,7 @@
   function addToCart(id) {
     cart.push(productsDB[id]);
     renderCart();
-    updateWidgetParcels(); // Обновляем габариты в виджете СДЭК
+    updateWidgetParcels(); // Автоматически обновляем габариты в виджете
   }
 
   function removeFromCart(index) {
@@ -149,23 +200,27 @@
     totalEl.textContent = total.toLocaleString('ru-RU');
   }
 
-  // Функция обновления посылок в виджете СДЭК
+  // Функция обновления габаритов в виджете СДЭК
   function updateWidgetParcels() {
     if (!cdekWidget) return;
     
     cdekWidget.resetParcels(); // Очищаем старые габариты
     
     if (cart.length > 0) {
-      // Передаем массив товаров из корзины. Виджет сам их сложит или посчитает для каждого
+      // Собираем массив габаритов всех товаров в корзине
       const goods = cart.map(item => ({
         weight: item.weight,
         length: item.length,
         width: item.width,
         height: item.height
       }));
+      
+      // Передаем все товары в виджет — он сам посчитает общий вес и подберет тарифы
       cdekWidget.addParcel(goods);
+      
+      console.log('📦 Габариты обновлены:', goods);
     } else {
-      // Если корзина пуста, передаем минимальную посылку, чтобы виджет не ломался
+      // Если корзина пуста, передаем минимальную посылку
       cdekWidget.addParcel({ weight: 1000, length: 20, width: 15, height: 5 });
     }
   }
@@ -176,12 +231,13 @@
       from: 'Новосибирск',
       root: 'cdek-map',
       apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
-      servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', // ⚠️ ВСТАВЬТЕ СЮДА ВАШ URL
+      // ⚠️ ВСТАВЬТЕ СЮДА ВАШ URL CLOUDFLARE WORKER
+      servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
       defaultLocation: 'Новосибирск',
       lang: 'rus',
       currency: 'RUB',
-      // Стартовые габариты (будут перезаписаны при добавлении товара)
-      goods: [{ weight: 1000, length: 20, width: 15, height: 5 }], 
+      // Стартовые габариты (будут заменены при добавлении товара)
+      goods: [{ weight: 1000, length: 20, width: 15, height: 5 }],
       
       onChoose: function(mode, tariff, address) {
         document.getElementById('delivery-info').style.display = 'block';
