@@ -3,131 +3,181 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VENSKO — Оформление заказа СДЭК</title>
-<!-- Виджет СДЭК версии 4 -->
+<title>VENSKO — Доставка СДЭК</title>
 <script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; color: #000; }
-  /* Высота обязательна, иначе виджет не будет виден */
-  #cdek-map { width: 100%; height: 600px; border: 1px solid #111; margin-top: 20px; }
-  .result-box { margin-top: 20px; padding: 15px; background: #f4f4f4; border-left: 4px solid #000; display: none; }
-  h2 { border-bottom: 1px solid #111; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-  .label { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
-  .value { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #000; }
+  #cdek-map { width: 100%; height: 500px; border: 1px solid #111; margin-top: 20px; }
+  .form-group { margin-bottom: 16px; position: relative; }
+  label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  input { width: 100%; padding: 12px; border: 1px solid #111; font-size: 15px; box-sizing: border-box; }
+  input:focus { outline: 2px solid #000; outline-offset: -2px; }
+  input:disabled { background: #f4f4f4; color: #888; cursor: not-allowed; }
+  .result-box { margin-top: 20px; padding: 15px; background: #f0f8ff; border-left: 4px solid #0066cc; display: none; }
+  .err { color: #b00020; font-size: 13px; margin-top: 4px; }
 </style>
 </head>
 <body>
 
 <h2>Оформление доставки СДЭК</h2>
 
-<!-- Элемент, в который будет встроен виджет -->
+<!-- Внешние поля ввода вместо поиска внутри виджета -->
+<div class="form-group">
+  <label for="cityInput">Город *</label>
+  <input type="text" id="cityInput" list="cityList" placeholder="Начните вводить город (например, Чебоксары)" autocomplete="off">
+  <datalist id="cityList"></datalist>
+  <div class="err" id="cityErr"></div>
+</div>
+
+<div class="form-group">
+  <label for="pvzInput">Пункт получения *</label>
+  <input type="text" id="pvzInput" list="pvzList" placeholder="Сначала выберите город выше" disabled autocomplete="off">
+  <datalist id="pvzList"></datalist>
+</div>
+
+<!-- Виджет только для отображения карты -->
 <div id="cdek-map"></div>
 
-<!-- Блок для вывода результата выбора -->
+<!-- Блок с результатом выбора -->
 <div class="result-box" id="resultBox">
-  <h3>Выбранная доставка:</h3>
-  <div class="label">Режим</div>
-  <div class="value" id="resMode"></div>
-  
-  <div class="label">Тариф</div>
-  <div class="value" id="resTariff"></div>
-  
-  <div class="label">Стоимость и срок</div>
-  <div class="value"><span id="resPrice"></span> ₽ (<span id="resPeriod"></span> дн.)</div>
-  
-  <div class="label">Адрес / ПВЗ</div>
-  <div class="value" id="resAddress"></div>
+  <b>Выбрано:</b> <span id="resText"></span><br>
+  <b>Тариф:</b> <span id="resTariff"></span><br>
+  <b>Стоимость:</b> <span id="resPrice"></span> ₽
 </div>
 
 <script type="text/javascript">
+  const WORKER = 'https://ВАШ_URL_CLOUDFLARE_WORKER.workers.dev'; // ⚠️ ВСТАВЬТЕ СЮДА ВАШ URL
+  let cdekWidget = null;
+  let currentPvzList = []; // Храним список ПВЗ текущего города
+  let selectedPvz = null;
+
   document.addEventListener('DOMContentLoaded', () => {
-    new window.CDEKWidget({
-      // Город отправителя: Чебоксары (код 419)
-      from: {
-        country_code: 'RU',
-        city: 'Чебоксары',
-        postal_code: 428000,
-        code: 419,
-        address: 'ул. Большевистская, д. 101',
-      },
+    // Инициализация виджета (без внутреннего поиска, он нам не нужен)
+    cdekWidget = new window.CDEKWidget({
+      from: { country_code: 'RU', city: 'Чебоксары', code: 419 },
       root: 'cdek-map',
       apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
       canChoose: true,
-      sender: false,
-      fixBounds: 'country',
-      popup: false,
+      servicePath: WORKER,
+      hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
+      hideDeliveryOptions: { office: false, door: false },
       debug: false,
-      requirePostcode: false,
+      goods: [{ width: 10, height: 10, length: 10, weight: 1000 }],
+      defaultLocation: [56.12684, 47.388736], // Чебоксары
       lang: 'rus',
       currency: 'RUB',
-      
-      // ⚠️ ЗАМЕНИТЕ ЭТУ СТРОКУ НА ВАШ РЕАЛЬНЫЙ URL CLOUDFLARE WORKER
-      servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
-      
-      // Настройки фильтров строго по вашему JSON
-      hideDeliveryOptions: {
-        office: false,
-        door: false
-      },
-      forceFilters: {
-        have_cashless: true,
-        have_cash: null,
-        is_dressing_room: null,
-        allowed_cod: null,
-        type: null
-      },
-      hideFilters: {
-        have_cashless: false,
-        have_cash: false,
-        is_dressing_room: false,
-        type: false
-      },
-      
-      // Габариты посылки (вес 1000г = 1кг для корректного расчета)
-      goods: [
-        {
-          width: 10,
-          height: 10,
-          length: 10,
-          weight: 1000,
-        },
-      ],
-      
-      // Координаты Чебоксар по умолчанию
-      defaultLocation: [56.12684, 47.388736],
-      
-      // Тарифы строго по вашему JSON
-      tariffs: {
-        office: [233, 137, 139],
-        door: [234, 136, 138]
-      },
-      
-      onReady() {
-        console.log('Виджет загружен');
-      },
-      onCalculate() {
-        console.log('Расчет стоимости доставки произведен');
-      },
+      tariffs: { office: [233, 137, 139], door: [234, 136, 138] },
       onChoose(mode, tariff, address) {
-        console.log('Доставка выбрана:', mode, tariff, address);
-        
-        // Отображаем выбранные данные на странице
-        document.getElementById('resultBox').style.display = 'block';
-        document.getElementById('resMode').textContent = mode === 'office' ? 'До ПВЗ (office)' : 'До двери (door)';
-        document.getElementById('resTariff').textContent = tariff.tariff_name + ' (код: ' + tariff.tariff_code + ')';
-        document.getElementById('resPrice').textContent = tariff.delivery_sum;
-        document.getElementById('resPeriod').textContent = `${tariff.period_min} - ${tariff.period_max}`;
-        
-        let addrText = '';
+        // Если пользователь кликнул по карте, синхронизируем наши поля
         if (mode === 'office' && address) {
-          addrText = `${address.name || 'ПВЗ'}, ${address.address || ''} (г. ${address.city || ''})`;
-        } else if (mode === 'door' && address) {
-          addrText = address.formatted || address.address || 'Адрес не указан';
+          document.getElementById('pvzInput').value = `${address.code} - ${address.address}`;
+          selectedPvz = address;
+          showResult(address.name || address.code, tariff, address.address);
         }
-        document.getElementById('resAddress').textContent = addrText;
-      },
+      }
+    });
+
+    // --- ЛОГИКА ПОЛЯ "ГОРОД" ---
+    let cityTimer;
+    document.getElementById('cityInput').addEventListener('input', (e) => {
+      clearTimeout(cityTimer);
+      const q = e.target.value.trim();
+      if (q.length < 2) return;
+      
+      cityTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`${WORKER}?action=suggest&q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          const list = document.getElementById('cityList');
+          list.innerHTML = '';
+          
+          if (data.results) {
+            data.results.forEach(item => {
+              const opt = document.createElement('option');
+              opt.value = item.value; // Название города
+              opt.dataset.lat = item.subtitle?.split(', ')[1]?.split(' ')[0]; // Грубый парсинг координат, если есть, или запросим при выборе
+              list.appendChild(opt);
+            });
+          }
+        } catch (err) {
+          document.getElementById('cityErr').textContent = 'Ошибка подсказок';
+        }
+      }, 300);
+    });
+
+    document.getElementById('cityInput').addEventListener('change', async (e) => {
+      const cityName = e.target.value;
+      if (!cityName) return;
+
+      // 1. Перемещаем карту
+      cdekWidget.updateLocation(cityName);
+
+      // 2. Получаем координаты города через геокодер, чтобы найти ПВЗ вокруг
+      document.getElementById('cityErr').textContent = 'Загрузка пунктов выдачи...';
+      try {
+        const geoRes = await fetch(`https://geocode-maps.yandex.ru/1.x/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&geocode=${encodeURIComponent(cityName)}&format=json&results=1`);
+        const geoData = await geoRes.json();
+        const pos = geoData?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
+        
+        if (pos) {
+          const [lng, lat] = pos.split(' ').map(Number);
+          // Создаем bounding box вокруг города (±0.15 градуса ≈ 15 км)
+          const latMin = (lat - 0.15).toFixed(4);
+          const latMax = (lat + 0.15).toFixed(4);
+          const lngMin = (lng - 0.15).toFixed(4);
+          const lngMax = (lng + 0.15).toFixed(4);
+
+          // 3. Запрашиваем ПВЗ в этом радиусе через наш Worker
+          const pvzUrl = `${WORKER}?action=byCoordinate&latitude_left_bottom=${latMin}&longitude_left_bottom=${lngMin}&latitude_right_top=${latMax}&longitude_right_top=${lngMax}&type=pvz&is_handout=true`;
+          const pvzRes = await fetch(pvzUrl);
+          const pvzData = await pvzRes.json();
+          
+          currentPvzList = pvzData;
+          populatePvzList(pvzData);
+          
+          document.getElementById('pvzInput').disabled = false;
+          document.getElementById('pvzInput').placeholder = 'Выберите или начните вводить адрес ПВЗ';
+          document.getElementById('cityErr').textContent = '';
+        } else {
+          document.getElementById('cityErr').textContent = 'Город не найден на карте';
+        }
+      } catch (err) {
+        document.getElementById('cityErr').textContent = 'Ошибка загрузки ПВЗ';
+        console.error(err);
+      }
+    });
+
+    // --- ЛОГИКА ПОЛЯ "ПУНКТ ПОЛУЧЕНИЯ" ---
+    document.getElementById('pvzInput').addEventListener('change', (e) => {
+      const val = e.target.value;
+      // Находим выбранный ПВЗ в нашем списке
+      selectedPvz = currentPvzList.find(p => `${p.code} - ${p.address}` === val || p.code === val);
+      
+      if (selectedPvz) {
+        // Имитируем выбор в виджете (показываем результат)
+        // Примечание: виджет v4 не имеет прямого метода selectPVZ(), поэтому мы просто сохраняем данные для формы
+        showResult(selectedPvz.name || selectedPvz.code, { tariff_name: 'Тариф уточняется', delivery_sum: '—' }, selectedPvz.address);
+      }
     });
   });
+
+  function populatePvzList(pvzArray) {
+    const list = document.getElementById('pvzList');
+    list.innerHTML = '';
+    // Ограничим список первыми 50 ПВЗ, чтобы не перегружать браузер, если город огромный
+    pvzArray.slice(0, 50).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = `${p.code} - ${p.address}`;
+      list.appendChild(opt);
+    });
+  }
+
+  function showResult(name, tariff, address) {
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('resText').textContent = `${name}, ${address}`;
+    document.getElementById('resTariff').textContent = tariff.tariff_name || 'Выберите тариф на карте';
+    document.getElementById('resPrice').textContent = tariff.delivery_sum || '—';
+  }
 </script>
 
 </body>
