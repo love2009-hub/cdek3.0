@@ -8,8 +8,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; }
-        .store-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        h2 { margin-top: 0; color: #333; }
+        .section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h2 { margin-top: 0; color: #333; font-size: 20px; }
         
         .products { display: flex; gap: 15px; flex-wrap: wrap; }
         .product-card { 
@@ -17,7 +17,7 @@
             cursor: pointer; transition: all 0.2s ease; width: 200px; text-align: center; 
         }
         .product-card:hover { border-color: #1a8c24; background-color: #f0fdf2; }
-        .product-card.active { border-color: #1a8c24; background-color: #e6f7e9; font-weight: bold; box-shadow: 0 0 0 1px #1a8c24; }
+        .product-card.active { border-color: #1a8c24; background-color: #e6f7e9; font-weight: bold; }
         .product-price { color: #1a8c24; margin-top: 8px; font-size: 18px; font-weight: bold; }
         
         .controls { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; }
@@ -42,10 +42,10 @@
 </head>
 <body>
 
-    <div class="store-section">
+    <div class="section">
         <h2>1. Выберите товар</h2>
         <div class="products">
-            <!-- Габариты скрыты в JS-объекте, на сайте видны только название и цена -->
+            <!-- Габариты скрыты в JS-объекте ниже, на сайте видны только название и цена -->
             <div class="product-card" onclick="selectProduct(0)" id="prod-0">
                 <div style="font-size: 24px;">👟</div>
                 <div>Кроссовки</div>
@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <div class="store-section">
+    <div class="section">
         <h2>2. Оформление доставки</h2>
         <div class="controls">
             <div class="input-group">
@@ -75,29 +75,42 @@
             
             <div class="input-group" style="flex-grow: 1; min-width: 300px;">
                 <label for="address-input">Адрес доставки</label>
+                <!-- Обычный input, который можно редактировать вручную после автозаполнения -->
                 <input type="text" id="address-input" placeholder="Выберите ПВЗ на карте или введите адрес вручную">
             </div>
         </div>
         <div class="info-text">
-            💡 <strong>Как это работает:</strong> Введите город и нажмите "Найти ПВЗ". Карта переместится в этот город и покажет доступные пункты. При нажатии кнопки "Выбрать" на карточке ПВЗ, адрес автоматически заполнится в поле выше, но вы можете изменить его вручную.
+            💡 <strong>Как это работает:</strong> Введите город и нажмите "Найти ПВЗ". Карта переместится в этот город и покажет доступные пункты с учетом габаритов выбранного товара. При нажатии кнопки "Выбрать" на карточке ПВЗ, адрес автоматически заполнится в поле выше, но вы можете изменить его вручную.
         </div>
         
         <div id="cdek-map"></div>
     </div>
 
     <script type="text/javascript">
-        // 1. База данных товаров (Габариты в коде, но НЕ выводятся в HTML)
-        // weight: в граммах, length/width/height: в сантиметрах
+        // 1. База данных товаров. Габариты в коде, но НЕ выводятся в HTML.
+        // Формат строго как вы просили: width, height, length, weight (вес в граммах, габариты в см)
         const products = [
-            { name: "Кроссовки", price: "5 000 ₽", weight: 800, length: 32, width: 20, height: 12 },
-            { name: "Наушники", price: "3 000 ₽", weight: 350, length: 22, width: 18, height: 10 },
-            { name: "Рюкзак", price: "4 500 ₽", weight: 600, length: 45, width: 30, height: 15 }
+            { 
+                name: "Кроссовки", 
+                price: "5 000 ₽", 
+                dims: { "width": 20, "height": 12, "length": 32, "weight": 1000 } 
+            },
+            { 
+                name: "Наушники", 
+                price: "3 000 ₽", 
+                dims: { "width": 18, "height": 10, "length": 22, "weight": 500 } 
+            },
+            { 
+                name: "Рюкзак", 
+                price: "4 500 ₽", 
+                dims: { "width": 30, "height": 15, "length": 45, "weight": 800 } 
+            }
         ];
 
         let currentProductIndex = 0;
         let cdekWidget = null;
 
-        // ВСТАВЬТЕ СЮДА ВАШ URL: либо Cloudflare Worker, либо ссылку на service.php
+        // ВСТАВЬТЕ СЮДА ВАШ URL из Cloudflare Worker (или ссылку на service.php)
         const SERVICE_PHP_URL = 'https://cdek.aroslavrazzivin.workers.dev/'; 
         const YANDEX_API_KEY = '89e052c4-e455-4c32-bca9-f83a2464c827';
 
@@ -111,7 +124,7 @@
             cdekWidget = new window.CDEKWidget({
                 from: {
                     country_code: 'RU',
-                    city: 'Чебоксары' // Город отправки
+                    city: 'Чебоксары' // Город отправки по умолчанию
                 },
                 to: {
                     country_code: 'RU',
@@ -124,18 +137,13 @@
                 defaultLocation: cityName, // Центрируем карту на введенном городе
                 lang: 'rus',
                 currency: 'RUB',
-                // Передаем габариты выбранного товара для точного расчета тарифа
-                goods: [{
-                    width: product.width,
-                    height: product.height,
-                    length: product.length,
-                    weight: product.weight
-                }],
+                // Передаем габариты выбранного товара для точного расчета тарифа виджетом
+                goods: [product.dims],
                 onReady: () => {
                     console.log('Виджет СДЭК успешно загружен для города:', cityName);
                 },
                 onChoose: (mode, tariff, address) => {
-                    // АВТОМАТИЧЕСКОЕ ЗАПОЛНЕНИЕ ПОЛЯ АДРЕСА
+                    // АВТОМАТИЧЕСКОЕ ЗАПОЛНЕНИЕ ПОЛЯ АДРЕСА ПРИ ВЫБОРЕ ПВЗ
                     if (mode === 'office' && address && address.address) {
                         document.getElementById('address-input').value = `ПВЗ СДЭК: ${address.address} (код: ${address.code})`;
                     } else if (mode === 'door' && address && address.formatted) {
@@ -157,13 +165,7 @@
             // Если виджет уже создан, обновляем габариты без полной перезагрузки карты
             if (cdekWidget) {
                 cdekWidget.resetParcels();
-                const product = products[currentProductIndex];
-                cdekWidget.addParcel({
-                    width: product.width,
-                    height: product.height,
-                    length: product.length,
-                    weight: product.weight
-                });
+                cdekWidget.addParcel(products[currentProductIndex].dims);
             }
         }
 
