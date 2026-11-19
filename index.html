@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мини-магазин с доставкой СДЭК (Чебоксары)</title>
     
-    <!-- Скрипт виджета СДЭК (располагается в head по рекомендации) -->
+    <!-- Скрипт виджета СДЭК (располагается в head по официальной рекомендации) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     
     <style>
@@ -17,7 +17,7 @@
         .product button:hover { background-color: #0056b3; }
         .product button.active { background-color: #28a745; }
         
-        /* Контейнер виджета. Высота обязательна, иначе виджет будет не виден (height: 0)! */
+        /* Контейнер виджета. Высота ОБЯЗАТЕЛЬНА, иначе виджет схлопнется в 0px! */
         #cdek-map { width: 100%; max-width: 800px; height: 600px; margin-top: 30px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
         
         /* Габариты товаров намеренно НЕ выводятся в HTML, они существуют только в JS-массиве ниже */
@@ -78,7 +78,11 @@
                 // !!! ЗАМЕНИТЕ ЭТУ СТРОКУ на URL вашего Cloudflare Worker из Части 1 !!!
                 servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
                 
-                defaultLocation: 'Чебоксары',
+                // ★ ГЛАВНЫЙ ФИКС: координаты Чебоксар вместо строки ★
+                // Это полностью обходит ошибку 403 геокодера Яндекса
+                defaultLocation: [47.2519, 56.1439], 
+                defaultLocationZoom: 12,
+
                 goods: [
                     {
                         length: product.length,
