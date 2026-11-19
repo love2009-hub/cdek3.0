@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мини-магазин с доставкой СДЭК</title>
     
+    <!-- Виджет СДЭК v4 -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     
     <style>
@@ -89,7 +90,7 @@
 
         let currentWidget = null;
         let currentCity = 'Чебоксары';
-        let currentCoords = [47.2519, 56.1439]; // [lon, lat]
+        let currentCoords = [47.2519, 56.1439]; // [longitude, latitude]
         let currentProductIndex = 0;
 
         function log(message, type = 'info') {
@@ -158,8 +159,11 @@
             currentWidget = new window.CDEKWidget({
                 from: 'Чебоксары',
                 root: 'cdek-map',
-                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
-                // Убедитесь, что здесь НЕТ пробелов и опечаток!
+                
+                // 🌟 ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем бесплатные карты OSM вместо Яндекс
+                mapType: 'osm', 
+                // apiKey удален, так как для OSM он не нужен и вызывал ошибку 403
+                
                 servicePath: 'https://cdek.aroslavrazzivin.workers.dev', 
                 defaultLocation: currentCoords,
                 defaultLocationZoom: 12,
@@ -176,7 +180,6 @@
                     log(`💰 Расчет тарифов получен`, 'success');
                 },
                 onChange: (pvz) => {
-                    // Срабатывает при выборе ПВЗ на карте или в списке
                     if (pvz && pvz.address) {
                         const fullAddress = `${pvz.city || currentCity}, ${pvz.address}`;
                         document.getElementById('address-input').value = fullAddress;
