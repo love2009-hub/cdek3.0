@@ -1,245 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VENSKO — Оформление заказа</title>
-
-<!-- 1. Подключение виджета v4 -->
-<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
-
-<style>
-  :root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:15px;letter-spacing:.02em}
-  .wrap{max-width:800px;margin:0 auto;padding:24px 20px 80px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 22px;border-bottom:1px solid var(--line)}
-  .logo{font-weight:700;font-style:italic;font-size:26px;letter-spacing:.06em}
-  h2{font-size:18px;letter-spacing:.12em;margin:38px 0 6px;text-transform:uppercase}
-  .rule{height:1px;background:var(--line);margin:0 0 22px}
-  label{display:block;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
-  label .hint{color:var(--muted);text-transform:none;letter-spacing:.02em;font-size:12px;margin-left:8px}
-  input,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
-  input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
-  
-  /* 2. Адаптивный контейнер карты (не растягивается на мобильных) */
-  #cdek-map { 
-    width: 100%; 
-    max-width: 100%; 
-    height: 600px; 
-    border: 1px solid var(--line); 
-    margin-top: 14px; 
-    overflow: hidden; 
-  }
-  @media (max-width: 768px) { 
-    #cdek-map { height: 450px; } 
-  }
-
-  .pvz-info{margin-top:10px;font-size:13px;color:#333;border-left:3px solid #000;padding:12px;background:#f9f9f9;display:none}
-  .btn{display:block;width:100%;padding:16px;border:1px solid var(--line);background:#000;color:#fff;font:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.1em;margin-top:24px;font-weight:bold}
-  .btn:hover{background:#fff;color:#000}
-  .err{color:#b00020;font-size:13px;margin-top:8px;font-weight:bold}
-  .cart-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line);align-items:center}
-  .cart-controls button{background:#eee;border:1px solid var(--line);padding:4px 12px;cursor:pointer;font-weight:bold}
-  .cart-controls button:hover{background:#ddd}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мини-магазин с доставкой СДЭК (Чебоксары)</title>
+    
+    <!-- Скрипт виджета СДЭК (располагается в head по рекомендации) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .product { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 8px; background: #f9f9f9; }
+        .product h3 { margin-top: 0; }
+        .product button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .product button:hover { background-color: #0056b3; }
+        
+        /* Контейнер виджета. Высота обязательна, иначе виджет будет не виден! */
+        #cdek-map { width: 100%; max-width: 800px; height: 600px; margin-top: 30px; border: 1px solid #ccc; border-radius: 8px; }
+        
+        /* Габариты товаров намеренно НЕ выводятся в HTML, они существуют только в JS-массиве ниже */
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <header><div class="logo">VENSKO</div></header>
 
-  <h2>Корзина</h2><div class="rule"></div>
-  <div id="cart-list"></div>
-  <div style="text-align:right;margin-top:12px;font-size:18px"><b>Товары: <span id="goods-sum">0</span> ₽</b></div>
+    <h1>Мини-интернет магазин</h1>
+    <p>Выберите товар для автоматического расчета стоимости доставки СДЭК:</p>
+    
+    <div class="product">
+        <h3>Товар №1</h3>
+        <p>Универсальный гаджет. Нажмите кнопку, чтобы рассчитать доставку.</p>
+        <button onclick="selectProduct(0)">Выбрать этот товар</button>
+    </div>
 
-  <h2>Контактные данные</h2><div class="rule"></div>
-  <label>ФИО *</label><input id="fio" placeholder="Иванов Иван Иванович">
-  <label>Телефон *</label><input id="tel" placeholder="+7 999 123 45 67">
+    <div class="product">
+        <h3>Товар №2</h3>
+        <p>Крупная бытовая техника. Нажмите кнопку, чтобы рассчитать доставку.</p>
+        <button onclick="selectProduct(1)">Выбрать этот товар</button>
+    </div>
 
-  <h2>Доставка СДЭК</h2><div class="rule"></div>
-  <label>Город получателя *</label>
-  <input id="city" value="Чебоксары" readonly style="background:#f4f4f4;cursor:not-allowed">
+    <div class="product">
+        <h3>Товар №3</h3>
+        <p>Компактный аксессуар. Нажмите кнопку, чтобы рассчитать доставку.</p>
+        <button onclick="selectProduct(2)">Выбрать этот товар</button>
+    </div>
 
-  <!-- 3. Элемент для встраивания виджета с фиксированной высотой -->
-  <div id="cdek-map"></div>
-  <div class="err" id="cdekErr"></div>
+    <!-- Элемент для встраивания виджета -->
+    <div id="cdek-map"></div>
 
-  <div class="pvz-info" id="pvzInfo">
-    <b id="pvzName"></b><br><span id="pvzAddress"></span><br>
-    <span style="color:#000;font-weight:bold;margin-top:6px;display:block" id="pvzTariff"></span>
-  </div>
+    <script type="text/javascript">
+        // =====================================================================
+        // ГАБАРИТЫ ТОВАРОВ 
+        // Находятся в коде, но НЕ отображаются на сайте в HTML.
+        // weight - в граммах, length/width/height - в сантиметрах.
+        // =====================================================================
+        const productsData = [
+            { name: "Товар №1", weight: 1200, length: 25, width: 15, height: 10 },
+            { name: "Товар №2", weight: 4500, length: 50, width: 40, height: 30 },
+            { name: "Товар №3", weight: 300, length: 12, width: 8, height: 5 }
+        ];
 
-  <label>Адрес доставки * <span class="hint">(заполняется автоматически при выборе на карте)</span></label>
-  <textarea id="addr" rows="2" placeholder="Город, улица, дом, квартира, индекс"></textarea>
+        let currentWidget = null;
 
-  <div style="text-align:right;margin-top:24px;font-size:22px"><b>ИТОГО: <span id="total-sum">0</span> ₽</b></div>
-  <button class="btn" onclick="pay()">Оформить заказ</button>
-</div>
+        function initWidget(productIndex) {
+            const product = productsData[productIndex];
+            
+            // Очищаем контейнер перед новой инициализацией
+            document.getElementById('cdek-map').innerHTML = '';
 
-<script>
-// Ваши данные уже вставлены
-const CDEK_CONFIG = {
-  servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
-  apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994', 
-};
-
-// 4. Три товара с индивидуальными габаритами (вес в г, размеры в см)
-const PRODUCTS = [
-  { id: 'polo', name: 'VENSKO HUSTLE POLO', color: 'КОРИЧНЕВЫЙ', price: 3400, size: 'M/L', weight: 300, length: 30, width: 25, height: 5 },
-  { id: 'hood', name: 'VENSKO OVERSIZED HOODIE', color: 'ЧЁРНЫЙ', price: 5200, size: 'L/XL', weight: 600, length: 35, width: 30, height: 8 },
-  { id: 'tee', name: 'VENSKO BASIC TEE', color: 'БЕЛЫЙ', price: 1800, size: 'S/M', weight: 200, length: 25, width: 20, height: 3 }
-];
-
-let cart = JSON.parse(localStorage.getItem('vensko_cart') || '{}');
-const save = () => localStorage.setItem('vensko_cart', JSON.stringify(cart));
-const fmt = n => n.toLocaleString('ru-RU') + ' ₽';
-
-let chosenTariff = null, chosenPvz = null;
-const defaultCity = 'Чебоксары';
-const defaultCoords = [56.12684, 47.388736]; // Координаты Чебоксар [широта, долгота]
-
-// 5. Расчет суммарных габаритов корзины для передачи в виджет
-function getCartGoods() {
-  let totalWeight = 0, maxLength = 0, maxWidth = 0, maxHeight = 0, hasItems = false;
-  Object.keys(cart).forEach(id => {
-    const p = PRODUCTS.find(x => x.id === id);
-    const qty = cart[id];
-    if (p && qty > 0) {
-      hasItems = true;
-      totalWeight += p.weight * qty;
-      maxLength = Math.max(maxLength, p.length);
-      maxWidth = Math.max(maxWidth, p.width);
-      maxHeight = Math.max(maxHeight, p.height);
-    }
-  });
-  // Если корзина пуста, возвращаем минимальную коробку, чтобы виджет не ломался
-  if (!hasItems) return [{ width: 10, height: 10, length: 10, weight: 100 }];
-  return [{ width: maxWidth, height: maxHeight, length: maxLength, weight: totalWeight }];
-}
-
-function renderCart() {
-  const list = document.getElementById('cart-list');
-  let goodsSum = 0;
-  const items = PRODUCTS.filter(p => cart[p.id]);
-  
-  if (items.length === 0) {
-    list.innerHTML = '<div style="color:#8a8a8a;padding:10px 0">Корзина пуста</div>';
-  } else {
-    list.innerHTML = items.map(p => {
-      const qty = cart[p.id];
-      const sum = p.price * qty;
-      goodsSum += sum;
-      return `
-        <div class="cart-item">
-          <div>
-            <div>${p.name} <span style="color:#8a8a8a">(${p.color}, ${p.size})</span></div>
-            <div style="font-size:12px;color:#8a8a8a">${qty} шт. × ${fmt(p.price)}</div>
-          </div>
-          <div class="cart-controls" style="display:flex;align-items:center;gap:10px">
-            <button onclick="changeQty('${p.id}', -1)">−</button>
-            <span>${qty}</span>
-            <button onclick="changeQty('${p.id}', 1)">+</button>
-            <span style="min-width:70px;text-align:right;font-weight:bold">${fmt(sum)}</span>
-          </div>
-        </div>`;
-    }).join('');
-  }
-  document.getElementById('goods-sum').textContent = goodsSum.toLocaleString('ru-RU');
-  updateTotal(goodsSum);
-}
-
-function changeQty(id, delta) {
-  cart[id] = (cart[id] || 0) + delta;
-  if (cart[id] <= 0) delete cart[id];
-  save();
-  renderCart();
-  // 6. Перезапуск виджета при изменении корзины для пересчета тарифов с новыми габаритами
-  initWidget();
-}
-
-// 7. Инициализация виджета (адаптирована под Чебоксары и v4)
-function initWidget() {
-  const box = document.getElementById('cdek-map');
-  box.innerHTML = ''; // Очищаем перед перерисовкой
-  chosenTariff = null; chosenPvz = null;
-  document.getElementById('pvzInfo').style.display = 'none';
-  document.getElementById('addr').value = '';
-
-  try {
-    new window.CDEKWidget({
-      from: { country_code: 'RU', city: defaultCity, code: 419 },
-      root: 'cdek-map',
-      apiKey: CDEK_CONFIG.apiKey,
-      servicePath: CDEK_CONFIG.servicePath,
-      defaultLocation: defaultCoords,
-      canChoose: true,
-      debug: false,
-      lang: 'rus',
-      currency: 'RUB',
-      goods: getCartGoods(), // Динамические габариты из корзины
-      tariffs: {
-        office: [136, 368], // Посылка склад-склад, склад-постамат
-        door: [137]         // Посылка склад-дверь
-      },
-      hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
-      hideDeliveryOptions: { office: false, door: false },
-      onReady() { document.getElementById('cdekErr').textContent = ''; },
-      onCalculate() { /* Расчет обновлен */ },
-      onChoose(mode, tariff, address) {
-        chosenTariff = tariff; chosenPvz = address;
-        let addrText = '', nameText = 'Доставка';
-        
-        if (mode === 'office' && address) {
-          nameText = address.name || 'Пункт выдачи СДЭК';
-          addrText = address.address || '';
-        } else if (mode === 'door' && address) {
-          nameText = 'Курьерская доставка';
-          addrText = address.formatted || address.address || '';
+            // Инициализация виджета СДЭК, адаптированная под Чебоксары
+            currentWidget = new window.CDEKWidget({
+                from: 'Чебоксары',
+                root: 'cdek-map',
+                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', // Ваш Yandex API key
+                servicePath: 'https://cdek3.gamer.free/?i=1', // <-- ЗАМЕНИТЕ на реальный URL вашего service.php!
+                defaultLocation: 'Чебоксары',
+                goods: [
+                    {
+                        length: product.length,
+                        width: product.width,
+                        height: product.height,
+                        weight: product.weight
+                    }
+                ],
+                onCalculate: (data) => {
+                    console.log('Данные расчета доставки от СДЭК:', data);
+                }
+            });
         }
-        
-        // Автозаполнение поля адреса
-        if (addrText) document.getElementById('addr').value = addrText;
-        
-        document.getElementById('pvzName').textContent = nameText;
-        document.getElementById('pvzAddress').textContent = addrText;
-        document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
-        document.getElementById('pvzInfo').style.display = 'block';
-        updateTotal();
-      }
-    });
-  } catch (err) {
-    document.getElementById('cdekErr').textContent = 'Ошибка виджета: ' + err.message;
-  }
-}
 
-function updateTotal() {
-  const goodsSum = PRODUCTS.filter(p => cart[p.id]).reduce((s, p) => s + p.price * cart[p.id], 0);
-  const ship = chosenTariff ? chosenTariff.delivery_sum : 0;
-  document.getElementById('total-sum').textContent = (goodsSum + ship).toLocaleString('ru-RU');
-}
+        function selectProduct(index) {
+            // Визуальное подтверждение выбора (габариты в этом сообщении не раскрываются)
+            alert('Вы выбрали: ' + productsData[index].name + '.\nГабариты автоматически загружены в калькулятор СДЭК.');
+            initWidget(index);
+        }
 
-function pay() {
-  const fio = document.getElementById('fio').value.trim();
-  const tel = document.getElementById('tel').value.trim();
-  const addr = document.getElementById('addr').value.trim();
-  if (!fio || !tel) return alert('Заполните ФИО и телефон');
-  if (!chosenTariff) return alert('Выберите способ доставки на карте СДЭК');
-  if (!addr) return alert('Адрес доставки не заполнен');
-  
-  const goodsSum = PRODUCTS.filter(p => cart[p.id]).reduce((s, p) => s + p.price * cart[p.id], 0);
-  const order = { 
-    customer: { fio, tel }, 
-    delivery: { city: defaultCity, address: addr, tariff: chosenTariff.tariff_name, sum: chosenTariff.delivery_sum, pvzCode: chosenPvz?.code }, 
-    total: goodsSum + chosenTariff.delivery_sum 
-  };
-  console.log('✅ ГОТОВЫЙ ЗАКАЗ:', order);
-  alert(`Заказ сформирован!\nДоставка: ${chosenTariff.delivery_sum} ₽\nИтого: ${order.total} ₽`);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderCart();
-  initWidget();
-});
-</script>
+        // Инициализация виджета с первым товаром при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            initWidget(0);
+        });
+    </script>
 </body>
 </html>
