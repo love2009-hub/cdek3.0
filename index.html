@@ -3,58 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мини-магазин с доставкой СДЭК (Чебоксары)</title>
+    <title>Мини-магазин с доставкой СДЭК</title>
     
-    <!-- Скрипт виджета СДЭК (располагается в head по официальной рекомендации) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; }
-        .product { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 8px; background: #fdfdfd; transition: box-shadow 0.2s; }
-        .product:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .product { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 8px; background: #fdfdfd; }
         .product h3 { margin-top: 0; color: #2c3e50; }
         .product button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; }
         .product button:hover { background-color: #0056b3; }
         .product button.active { background-color: #28a745; }
-        
-        /* Контейнер виджета. Высота ОБЯЗАТЕЛЬНА, иначе виджет схлопнется в 0px! */
         #cdek-map { width: 100%; max-width: 800px; height: 600px; margin-top: 30px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        
-        /* Габариты товаров намеренно НЕ выводятся в HTML, они существуют только в JS-массиве ниже */
     </style>
 </head>
 <body>
 
     <h1>Мини-интернет магазин</h1>
-    <p>Выберите товар. Габариты автоматически передадутся в калькулятор СДЭК, но не будут отображены на странице.</p>
+    <p>Выберите товар для расчета доставки СДЭК.</p>
     
     <div class="product">
         <h3>📦 Товар №1: Смартфон</h3>
-        <p>Компактная электроника. Нажмите кнопку для расчета доставки.</p>
+        <p>Компактная электроника.</p>
         <button onclick="selectProduct(0, this)">Рассчитать доставку</button>
     </div>
 
     <div class="product">
         <h3>📦 Товар №2: Микроволновая печь</h3>
-        <p>Крупная бытовая техника. Нажмите кнопку для расчета доставки.</p>
+        <p>Крупная бытовая техника.</p>
         <button onclick="selectProduct(1, this)">Рассчитать доставку</button>
     </div>
 
     <div class="product">
         <h3>📦 Товар №3: Чехол для телефона</h3>
-        <p>Мелкий аксессуар. Нажмите кнопку для расчета доставки.</p>
+        <p>Мелкий аксессуар.</p>
         <button onclick="selectProduct(2, this)">Рассчитать доставку</button>
     </div>
 
-    <!-- Элемент для встраивания виджета -->
     <div id="cdek-map"></div>
 
     <script type="text/javascript">
-        // =====================================================================
-        // ГАБАРИТЫ ТОВАРОВ 
-        // Находятся в коде, но НЕ отображаются на сайте в HTML.
-        // weight - в граммах, length/width/height - в сантиметрах.
-        // =====================================================================
+        // Габариты товаров (скрыты от пользователя, видны только в коде)
         const PRODUCTS_DATA = [
             { name: "Смартфон", weight: 400, length: 18, width: 10, height: 3 },
             { name: "Микроволновая печь", weight: 12500, length: 50, width: 40, height: 30 },
@@ -65,50 +54,32 @@
 
         function initWidget(productIndex) {
             const product = PRODUCTS_DATA[productIndex];
-            
-            // Очищаем контейнер перед новой инициализацией, чтобы не дублировать карту
             document.getElementById('cdek-map').innerHTML = '';
 
-            // Инициализация виджета СДЭК, адаптированная под Чебоксары
             currentWidget = new window.CDEKWidget({
                 from: 'Чебоксары',
                 root: 'cdek-map',
-                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', // Ваш Yandex API key
-                
-                // !!! ЗАМЕНИТЕ ЭТУ СТРОКУ на URL вашего Cloudflare Worker из Части 1 !!!
-                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
-                
-                // ★ ГЛАВНЫЙ ФИКС: координаты Чебоксар вместо строки ★
-                // Это полностью обходит ошибку 403 геокодера Яндекса
-                defaultLocation: [47.2519, 56.1439], 
+                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
+                servicePath: 'https://ВАШ-WORKER.ВАШ-АККАУНТ.workers.dev',
+                defaultLocation: [47.2519, 56.1439],
                 defaultLocationZoom: 12,
-
-                goods: [
-                    {
-                        length: product.length,
-                        width: product.width,
-                        height: product.height,
-                        weight: product.weight
-                    }
-                ],
-                onCalculate: (data) => {
-                    console.log('Данные расчета доставки от СДЭК:', data);
-                }
+                goods: [{
+                    length: product.length,
+                    width: product.width,
+                    height: product.height,
+                    weight: product.weight
+                }],
+                onCalculate: (data) => console.log('Расчёт СДЭК:', data)
             });
         }
 
         function selectProduct(index, btnElement) {
-            // Визуальное подтверждение выбора (габариты в этом сообщении не раскрываются)
-            alert('Вы выбрали: ' + PRODUCTS_DATA[index].name + '.\nГабариты автоматически загружены в калькулятор СДЭК.');
-            
-            // Подсветка активной кнопки
+            alert('Выбран: ' + PRODUCTS_DATA[index].name);
             document.querySelectorAll('.product button').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
-            
             initWidget(index);
         }
 
-        // Инициализация виджета с первым товаром при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
             initWidget(0);
         });
