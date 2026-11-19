@@ -3,89 +3,132 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VENSKO — Доставка СДЭК</title>
+<title>VENSKO — Оформление заказа СДЭК</title>
+<!-- Виджет СДЭК версии 4 -->
 <script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
 <style>
-  body{font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:20px;color:#000}
-  #cdek-map{width:100%;height:600px;border:1px solid #111;margin-top:20px}
-  .result-box{margin-top:20px;padding:15px;background:#f4f4f4;border-left:4px solid #000;display:none}
-  h2{border-bottom:1px solid #111;padding-bottom:10px;text-transform:uppercase;letter-spacing:.1em}
-  .label{font-size:12px;text-transform:uppercase;color:#666;margin-bottom:4px}
-  .value{font-size:16px;font-weight:bold;margin-bottom:12px}
-  .search-box{display:flex;gap:10px;margin-bottom:10px}
-  .search-box input{flex:1;padding:10px;border:1px solid #111;font-size:14px}
-  .search-box button{padding:10px 20px;background:#000;color:#fff;border:none;cursor:pointer;text-transform:uppercase}
-  .search-box button:hover{background:#333}
-  .err{color:#b00020;font-size:13px;margin-top:8px}
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; color: #000; }
+  /* Высота обязательна, иначе виджет не будет виден */
+  #cdek-map { width: 100%; height: 600px; border: 1px solid #111; margin-top: 20px; }
+  .result-box { margin-top: 20px; padding: 15px; background: #f4f4f4; border-left: 4px solid #000; display: none; }
+  h2 { border-bottom: 1px solid #111; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .label { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
+  .value { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
 </style>
 </head>
 <body>
+
 <h2>Оформление доставки СДЭК</h2>
-<div class="search-box">
-  <input type="text" id="cityInput" placeholder="Введите город" value="Чебоксары">
-  <button onclick="changeCity()">Найти на карте</button>
-</div>
+
+<!-- Элемент, в который будет встроен виджет -->
 <div id="cdek-map"></div>
-<div class="err" id="cdekErr"></div>
+
+<!-- Блок для вывода результата выбора -->
 <div class="result-box" id="resultBox">
   <h3>Выбранная доставка:</h3>
-  <div class="label">Режим</div><div class="value" id="resMode"></div>
-  <div class="label">Тариф</div><div class="value" id="resTariff"></div>
-  <div class="label">Стоимость и срок</div><div class="value"><span id="resPrice"></span> ₽ (<span id="resPeriod"></span> дн.)</div>
-  <div class="label">Адрес / ПВЗ</div><div class="value" id="resAddress"></div>
+  <div class="label">Режим</div>
+  <div class="value" id="resMode"></div>
+  
+  <div class="label">Тариф</div>
+  <div class="value" id="resTariff"></div>
+  
+  <div class="label">Стоимость и срок</div>
+  <div class="value"><span id="resPrice"></span> ₽ (<span id="resPeriod"></span> дн.)</div>
+  
+  <div class="label">Адрес / ПВЗ</div>
+  <div class="value" id="resAddress"></div>
 </div>
 
 <script type="text/javascript">
-  const WORKER = 'https://cdek.aroslavrazzivin.workers.dev'; // ваш URL Worker'а
-  let cdekWidget = null;
-
   document.addEventListener('DOMContentLoaded', () => {
-    cdekWidget = new window.CDEKWidget({
-      from: { country_code: 'RU', city: 'Чебоксары', postal_code: 428000, code: 419, address: 'ул. Большевистская, д. 101' },
+    new window.CDEKWidget({
+      // Город отправителя: Чебоксары (код 419)
+      from: {
+        country_code: 'RU',
+        city: 'Чебоксары',
+        postal_code: 428000,
+        code: 419,
+        address: 'ул. Большевистская, д. 101',
+      },
       root: 'cdek-map',
-      apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',   // ⚠️ ключ с продуктом «JavaScript API и HTTP Геокодер»
+      apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827',
       canChoose: true,
-      servicePath: WORKER,
-      hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
-      hideDeliveryOptions: { office: false, door: false },
+      sender: false,
+      fixBounds: 'country',
+      popup: false,
       debug: false,
-      goods: [{ width: 10, height: 10, length: 10, weight: 1000 }],
-      defaultLocation: [56.12684, 47.388736],
+      requirePostcode: false,
       lang: 'rus',
       currency: 'RUB',
-      tariffs: { office: [233, 137, 139], door: [234, 136, 138], pickup: [] },
-      onReady(){ document.getElementById('cdekErr').textContent = ''; },
-      onChoose(mode, tariff, address){
+      
+      // ⚠️ ЗАМЕНИТЕ ЭТУ СТРОКУ НА ВАШ РЕАЛЬНЫЙ URL CLOUDFLARE WORKER
+      servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
+      
+      // Настройки фильтров строго по вашему JSON
+      hideDeliveryOptions: {
+        office: false,
+        door: false
+      },
+      forceFilters: {
+        have_cashless: true,
+        have_cash: null,
+        is_dressing_room: null,
+        allowed_cod: null,
+        type: null
+      },
+      hideFilters: {
+        have_cashless: false,
+        have_cash: false,
+        is_dressing_room: false,
+        type: false
+      },
+      
+      // Габариты посылки (вес 1000г = 1кг для корректного расчета)
+      goods: [
+        {
+          width: 10,
+          height: 10,
+          length: 10,
+          weight: 1000,
+        },
+      ],
+      
+      // Координаты Чебоксар по умолчанию
+      defaultLocation: [56.12684, 47.388736],
+      
+      // Тарифы строго по вашему JSON
+      tariffs: {
+        office: [233, 137, 139],
+        door: [234, 136, 138]
+      },
+      
+      onReady() {
+        console.log('Виджет загружен');
+      },
+      onCalculate() {
+        console.log('Расчет стоимости доставки произведен');
+      },
+      onChoose(mode, tariff, address) {
+        console.log('Доставка выбрана:', mode, tariff, address);
+        
+        // Отображаем выбранные данные на странице
         document.getElementById('resultBox').style.display = 'block';
-        document.getElementById('resMode').textContent = mode === 'office' ? 'До ПВЗ' : 'До двери';
-        document.getElementById('resTariff').textContent = tariff.tariff_name + ' (код ' + tariff.tariff_code + ')';
+        document.getElementById('resMode').textContent = mode === 'office' ? 'До ПВЗ (office)' : 'До двери (door)';
+        document.getElementById('resTariff').textContent = tariff.tariff_name + ' (код: ' + tariff.tariff_code + ')';
         document.getElementById('resPrice').textContent = tariff.delivery_sum;
-        document.getElementById('resPeriod').textContent = tariff.period_min + ' - ' + tariff.period_max;
-        let a = '';
-        if (mode === 'office' && address) a = (address.name||'ПВЗ') + ', ' + (address.address||'') + ' (г. ' + (address.city||'') + ')';
-        else if (mode === 'door' && address) a = address.formatted || address.address || '';
-        document.getElementById('resAddress').textContent = a;
+        document.getElementById('resPeriod').textContent = `${tariff.period_min} - ${tariff.period_max}`;
+        
+        let addrText = '';
+        if (mode === 'office' && address) {
+          addrText = `${address.name || 'ПВЗ'}, ${address.address || ''} (г. ${address.city || ''})`;
+        } else if (mode === 'door' && address) {
+          addrText = address.formatted || address.address || 'Адрес не указан';
+        }
+        document.getElementById('resAddress').textContent = addrText;
       },
     });
   });
-
-  // Поиск города через прокси Worker'а (не зависит от браузерного реферера)
-  async function changeCity(){
-    const q = document.getElementById('cityInput').value.trim();
-    if (q.length < 2) return;
-    document.getElementById('cdekErr').textContent = 'Ищу…';
-    try{
-      const d = await (await fetch(`${WORKER}?action=geocode&q=${encodeURIComponent(q)}`)).json();
-      const m = d?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
-      if (m){
-        const [lng, lat] = m.split(' ').map(Number);
-        cdekWidget.updateLocation([lat, lng]); // передаём координаты массивом — виджет не зовёт свой геокодер
-        document.getElementById('cdekErr').textContent = '';
-      } else {
-        document.getElementById('cdekErr').textContent = 'Город не найден';
-      }
-    }catch(e){ document.getElementById('cdekErr').textContent = 'Ошибка поиска: ' + e.message; }
-  }
 </script>
+
 </body>
 </html>
