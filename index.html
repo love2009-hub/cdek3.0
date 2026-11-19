@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VENSKO — Оформление заказа</title>
-<!-- Виджет ПВЗ СДЭК v3 (стабильная версия для твоего ключа Яндекс.Карт) -->
-<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@3" charset="utf-8"></script>
+
+<!-- 1. Подключение виджета v4 -->
+<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
+
 <style>
   :root{--ink:#000;--line:#111;--muted:#8a8a8a;--bg:#fff}
   *{box-sizing:border-box}
@@ -20,9 +22,18 @@
   input,textarea{width:100%;padding:14px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
   input:focus,textarea:focus{outline:2px solid #000;outline-offset:-2px}
   
-  /* Адаптивная карта: не растягивается на мобильных */
-  #cdek-map { width: 100%; max-width: 100%; height: 600px; border: 1px solid var(--line); margin-top: 14px; overflow: hidden; }
-  @media (max-width: 768px) { #cdek-map { height: 450px; } }
+  /* 2. Адаптивный контейнер карты (не растягивается на мобильных) */
+  #cdek-map { 
+    width: 100%; 
+    max-width: 100%; 
+    height: 600px; 
+    border: 1px solid var(--line); 
+    margin-top: 14px; 
+    overflow: hidden; 
+  }
+  @media (max-width: 768px) { 
+    #cdek-map { height: 450px; } 
+  }
 
   .pvz-info{margin-top:10px;font-size:13px;color:#333;border-left:3px solid #000;padding:12px;background:#f9f9f9;display:none}
   .btn{display:block;width:100%;padding:16px;border:1px solid var(--line);background:#000;color:#fff;font:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.1em;margin-top:24px;font-weight:bold}
@@ -49,7 +60,7 @@
   <label>Город получателя *</label>
   <input id="city" value="Чебоксары" readonly style="background:#f4f4f4;cursor:not-allowed">
 
-  <!-- Контейнер виджета с фиксированной высотой -->
+  <!-- 3. Элемент для встраивания виджета с фиксированной высотой -->
   <div id="cdek-map"></div>
   <div class="err" id="cdekErr"></div>
 
@@ -66,12 +77,13 @@
 </div>
 
 <script>
+// Ваши данные уже вставлены
 const CDEK_CONFIG = {
   servicePath: 'https://cdek.aroslavrazzivin.workers.dev/',
   apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994', 
 };
 
-// 1. ТРИ ТОВАРА С ИНДИВИДУАЛЬНЫМИ ГАБАРИТАМИ (вес в г, размеры в см)
+// 4. Три товара с индивидуальными габаритами (вес в г, размеры в см)
 const PRODUCTS = [
   { id: 'polo', name: 'VENSKO HUSTLE POLO', color: 'КОРИЧНЕВЫЙ', price: 3400, size: 'M/L', weight: 300, length: 30, width: 25, height: 5 },
   { id: 'hood', name: 'VENSKO OVERSIZED HOODIE', color: 'ЧЁРНЫЙ', price: 5200, size: 'L/XL', weight: 600, length: 35, width: 30, height: 8 },
@@ -86,7 +98,7 @@ let chosenTariff = null, chosenPvz = null;
 const defaultCity = 'Чебоксары';
 const defaultCoords = [56.12684, 47.388736]; // Координаты Чебоксар [широта, долгота]
 
-// 2. РАСЧЕТ СУММАРНЫХ ГАБАРИТОВ КОРЗИНЫ для виджета
+// 5. Расчет суммарных габаритов корзины для передачи в виджет
 function getCartGoods() {
   let totalWeight = 0, maxLength = 0, maxWidth = 0, maxHeight = 0, hasItems = false;
   Object.keys(cart).forEach(id => {
@@ -141,10 +153,11 @@ function changeQty(id, delta) {
   if (cart[id] <= 0) delete cart[id];
   save();
   renderCart();
-  // 3. ПЕРЕЗАПУСК ВИДЖЕТА ПРИ ИЗМЕНЕНИИ КОРЗИНЫ для пересчета тарифов с новыми габаритами
+  // 6. Перезапуск виджета при изменении корзины для пересчета тарифов с новыми габаритами
   initWidget();
 }
 
+// 7. Инициализация виджета (адаптирована под Чебоксары и v4)
 function initWidget() {
   const box = document.getElementById('cdek-map');
   box.innerHTML = ''; // Очищаем перед перерисовкой
@@ -163,7 +176,7 @@ function initWidget() {
       debug: false,
       lang: 'rus',
       currency: 'RUB',
-      goods: getCartGoods(), // <-- Динамические габариты из корзины
+      goods: getCartGoods(), // Динамические габариты из корзины
       tariffs: {
         office: [136, 368], // Посылка склад-склад, склад-постамат
         door: [137]         // Посылка склад-дверь
@@ -184,7 +197,9 @@ function initWidget() {
           addrText = address.formatted || address.address || '';
         }
         
+        // Автозаполнение поля адреса
         if (addrText) document.getElementById('addr').value = addrText;
+        
         document.getElementById('pvzName').textContent = nameText;
         document.getElementById('pvzAddress').textContent = addrText;
         document.getElementById('pvzTariff').textContent = tariff ? `Тариф: ${tariff.tariff_name} · ${tariff.delivery_sum} ₽` : 'Тариф не рассчитан';
