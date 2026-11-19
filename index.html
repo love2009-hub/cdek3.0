@@ -68,22 +68,21 @@
 <script>
 // КОНФИГУРАЦИЯ
 const CDEK_CONFIG = {
-  // ВСТАВЬТЕ СЮДА URL ВАШЕГО CLOUDFLARE WORKER ИЗ ШАГА 1
+  // ⚠️ ВСТАВЬТЕ СЮДА URL ВАШЕГО CLOUDFLARE WORKER ИЗ ШАГА 1
   servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
   apiKey: '972c2b0a-3090-439e-982f-4692ad4ab994'
 };
 
-let chosenTariff = null, chosenAddress = null;
-let currentCity = 'Чебоксары';
-let currentCoords = [56.12684, 47.388736]; // Чебоксары по умолчанию
+let cdekWidget = null;
+let chosenTariff = null;
 const GOODS_SUM = 8600;
 
 // Инициализация виджета строго по инструкции v4.0
-function initWidget(city, coords) {
+function initWidget() {
   document.getElementById('cdek-map').innerHTML = ''; // Очистка перед перерисовкой
   
   try {
-    new window.CDEKWidget({
+    cdekWidget = new window.CDEKWidget({
       from: {
         country_code: 'RU',
         city: 'Новосибирск',
@@ -106,9 +105,9 @@ function initWidget(city, coords) {
         door: false,
       },
       debug: false,
-      // Обязательно для расчета!
+      // Обязательно для расчета! (ширина, высота, длина в см, вес в граммах)
       goods: [{ width: 15, height: 10, length: 20, weight: 1000 }],
-      defaultLocation: coords,
+      defaultLocation: 'Чебоксары',
       lang: 'rus',
       currency: 'RUB',
       tariffs: {
@@ -123,11 +122,10 @@ function initWidget(city, coords) {
       },
       onChoose(mode, tariff, address) {
         chosenTariff = tariff;
-        chosenAddress = address;
-        
         let addrText = '';
         let nameText = 'Доставка';
 
+        // Структура объекта адреса строго по вашей инструкции
         if (mode === 'office' && address) {
           nameText = address.name || 'ПВЗ СДЭК';
           addrText = address.address || '';
@@ -137,6 +135,7 @@ function initWidget(city, coords) {
           addrText = address.formatted || address.address || '';
         }
 
+        // Автозаполнение поля адреса
         if (addrText) {
           document.getElementById('addr').value = addrText;
         }
@@ -155,34 +154,21 @@ function initWidget(city, coords) {
   }
 }
 
-// Поиск города через Яндекс Геокодер
-async function geocodeAndMove(cityName) {
-  document.getElementById('cdekErr').textContent = 'Поиск...';
-  try {
-    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${CDEK_CONFIG.apiKey}&geocode=${encodeURIComponent(cityName)}&format=json&results=1`;
-    const data = await (await fetch(url)).json();
-    const pos = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject?.Point?.pos;
-    
-    if (pos) {
-      const [lng, lat] = pos.split(' ').map(Number);
-      currentCity = cityName;
-      currentCoords = [lat, lng];
-      document.getElementById('city').value = cityName;
-      document.getElementById('cdekErr').textContent = '';
-      initWidget(currentCity, currentCoords);
-    } else {
-      document.getElementById('cdekErr').textContent = 'Город не найден. Проверьте название.';
-    }
-  } catch (err) {
-    document.getElementById('cdekErr').textContent = 'Ошибка геокодера. Проверьте ключ Яндекса (403).';
-  }
-}
-
-// Обработчики кнопки и Enter
+// Поиск города через метод виджета updateLocation (как в инструкции)
 document.getElementById('findCityBtn').addEventListener('click', () => {
-  const val = document.getElementById('city').value.trim();
-  if (val.length > 2) geocodeAndMove(val);
+  const cityName = document.getElementById('city').value.trim();
+  if (cityName.length > 2 && cdekWidget) {
+    document.getElementById('cdekErr').textContent = 'Поиск города...';
+    // Метод updateLocation принимает строку и сам делает геокодирование
+    cdekWidget.updateLocation(cityName).then(() => {
+      document.getElementById('cdekErr').textContent = '';
+    }).catch(() => {
+      document.getElementById('cdekErr').textContent = 'Город не найден. Проверьте название.';
+    });
+  }
 });
+
+// Также оставляем поддержку клавиши Enter
 document.getElementById('city').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -203,7 +189,7 @@ function pay() {
   if (!document.getElementById('addr').value.trim()) return alert('Адрес не заполнен');
 
   const order = {
-    city: currentCity,
+    city: document.getElementById('city').value,
     address: document.getElementById('addr').value,
     tariff: chosenTariff.tariff_name,
     total: document.getElementById('total-sum').textContent + ' ₽'
@@ -213,9 +199,7 @@ function pay() {
 }
 
 // Запуск при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-  initWidget(currentCity, currentCoords);
-});
+document.addEventListener('DOMContentLoaded', initWidget);
 </script>
 </body>
 </html>
