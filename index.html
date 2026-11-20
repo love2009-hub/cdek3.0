@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды — доставка СДЭК</title>
     
-    <!-- Исправление ошибки favicon.ico 404 -->
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
@@ -94,7 +93,7 @@
     <div class="panel">
         <div class="input-row">
             <label for="city-input">Город получателя:</label>
-            <input id="city-input" type="text" value="Чебоксары" placeholder="Введите любой город, например Казань">
+            <input id="city-input" type="text" value="Чебоксары" placeholder="Введите любой город, например Новосибирск">
             <button class="btn-search" id="search-button" onclick="searchCity()">Найти</button>
         </div>
         <div class="input-row">
@@ -121,7 +120,7 @@
         </div>
         <div class="total-row" id="delivery-row">
             <span>Стоимость доставки:</span>
-            <span class="value" id="total-delivery">Выберите тариф</span>
+            <span class="value" id="total-delivery">Выберите тариф или ПВЗ</span>
         </div>
         <div class="total-row grand-total">
             <span>Итого к оплате:</span>
@@ -253,42 +252,54 @@
                 renderTariffsFromWidget(data);
             },
             
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАПОЛНЕНИЯ АДРЕСА (теперь точно в формате "Город, Улица, Дом")
+            // =====================================================================
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ onChoose (работает точно с вашим примером данных)
+            // =====================================================================
             onChoose: function(data) {
                 console.log("CDEK onChoose raw data:", data);
-                
-                // Виджет может передать объект или массив с объектом. Приводим к объекту.
-                const point = Array.isArray(data) ? data[0] : data;
-                if (!point) return;
 
-                // Извлекаем город и улицу из наиболее надежных полей
-                const city = point.city || (point.location && point.location.city) || recipientLocation.city || '';
-                const street = point.address || point.address_full || (point.location && point.location.address) || '';
-                const name = point.name || '';
-
-                let fullAddress = '';
-
-                if (street) {
-                    // Если в street уже есть название города (например, "г. Чебоксары, ул..."), не дублируем его
-                    const cityShort = city.split(' ')[0].toLowerCase(); // берем первое слово (например, "чебоксары")
-                    if (city && !street.toLowerCase().includes(cityShort)) {
-                        fullAddress = `${city}, ${street}`;
-                    } else {
-                        fullAddress = street;
-                    }
-                } else if (name) {
-                    // Если street пуст, но есть name (там часто написан полный адрес), используем его
-                    fullAddress = name;
-                } else if (city) {
-                    fullAddress = city;
+                // Виджет передает массив: [0: тип, 1: тариф, 2: данные ПВЗ]
+                if (!Array.isArray(data) || data.length < 3) {
+                    console.warn("Неожиданный формат данных от виджета");
+                    return;
                 }
 
-                // Очистка от лишних запятых и пробелов в начале/конце
-                fullAddress = fullAddress.replace(/^,\s*|,\s*$/g, '').replace(/\s+/g, ' ').trim();
+                const tariffInfo = data[1]; // Информация о тарифе (содержит delivery_sum)
+                const pvzInfo = data[2];    // Информация о ПВЗ (содержит city и address)
 
-                if (fullAddress) {
-                    document.getElementById('address-input').value = fullAddress;
-                    setStatus('ПВЗ выбран. Адрес заполнен: ' + fullAddress, 'success');
+                // 1. ЗАПОЛНЕНИЕ ПОЛЯ АДРЕСА
+                if (pvzInfo) {
+                    const city = pvzInfo.city || '';
+                    const address = pvzInfo.address || pvzInfo.name || '';
+                    
+                    let fullAddress = '';
+                    if (city && address) {
+                        // Проверка, чтобы не дублировать город, если он уже есть в address
+                        if (address.toLowerCase().includes(city.toLowerCase())) {
+                            fullAddress = address;
+                        } else {
+                            fullAddress = `${city}, ${address}`;
+                        }
+                    } else {
+                        fullAddress = address || city || '';
+                    }
+
+                    if (fullAddress) {
+                        document.getElementById('address-input').value = fullAddress;
+                        setStatus('ПВЗ выбран. Адрес заполнен: ' + fullAddress, 'success');
+                    }
+                }
+
+                // 2. ОБНОВЛЕНИЕ СТОИМОСТИ ДОСТАВКИ В ИТОГАХ
+                if (tariffInfo && tariffInfo.tariff_code) {
+                    // Ищем этот тариф в нашем списке доступных тарифов
+                    const matchedTariff = availableTariffs.find(t => t.tariff_code === tariffInfo.tariff_code);
+                    
+                    if (matchedTariff) {
+                        selectedTariff = matchedTariff;
+                        updateTariffSelection(); // Подсвечиваем карточку тарифа зеленым
+                        updateTotal(); // Пересчитываем итоговую сумму (товары + delivery_sum из тарифа)
+                    }
                 }
             }
         };
@@ -381,13 +392,13 @@
         const deliveryValue = document.getElementById('total-delivery');
         const grandTotal = document.getElementById('total-grand');
         
-        if (selectedTariff && selectedTariff.delivery_sum) {
+        if (selectedTariff && selectedTariff.delivery_sum !== undefined) {
             deliveryRow.classList.remove('no-delivery');
             deliveryValue.textContent = formatPrice(selectedTariff.delivery_sum);
             grandTotal.textContent = formatPrice(goodsSum + selectedTariff.delivery_sum);
         } else {
             deliveryRow.classList.add('no-delivery');
-            deliveryValue.textContent = 'Выберите тариф выше';
+            deliveryValue.textContent = 'Выберите тариф или ПВЗ выше';
             grandTotal.textContent = formatPrice(goodsSum) + ' + доставка';
         }
     }
@@ -397,7 +408,7 @@
         if (!cart.length) errors.push('Корзина пуста — добавьте хотя бы один товар.');
         if (!document.getElementById('city-input').value.trim()) errors.push('Не указан город получателя.');
         if (!document.getElementById('address-input').value.trim()) errors.push('Не указан адрес доставки / ПВЗ. Выберите ПВЗ на карте или введите адрес вручную.');
-        if (!selectedTariff) errors.push('Не выбран тариф доставки. Кликните по одному из тарифов в списке.');
+        if (!selectedTariff) errors.push('Не выбран тариф доставки. Кликните по тарифу или выберите ПВЗ на карте.');
         
         if (errors.length === 0) {
             setStatus('✅ Все гуд! Заказ можно оформлять.', 'success');
