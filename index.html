@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды — доставка СДЭК</title>
+    
+    <!-- Виджет СДЭК -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
+    <!-- Яндекс Карты и Геокодер -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&lang=ru_RU" type="text/javascript"></script>
+    
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #222; }
@@ -225,6 +229,9 @@
             return;
         }
 
+        // =====================================================================
+        // НОВАЯ КОНФИГУРАЦИЯ ВИДЖЕТА (адаптирована под ваш JSON и Чебоксары)
+        // =====================================================================
         const config = {
             from: SENDER_CITY, // ЖЕСТКО: Чебоксары
             root: 'cdek-map',
@@ -233,12 +240,45 @@
             defaultLocation: recipientLocation.city,
             goods: getWidgetGoods(), // Передаем габариты в виджет
             
+            // Явные настройки из вашего примера
+            lang: 'rus',
+            currency: 'RUB',
+            canChoose: true,
+            sender: false,
+            fixBounds: null,
+            popup: false,
+            debug: false,
+            requirePostcode: false,
+            
+            hideDeliveryOptions: {
+                office: false,
+                door: false
+            },
+            forceFilters: {
+                have_cashless: null,
+                have_cash: null,
+                is_dressing_room: null,
+                allowed_cod: null,
+                type: null
+            },
+            hideFilters: {
+                have_cashless: false,
+                have_cash: false,
+                is_dressing_room: false,
+                type: false
+            },
+            tariffs: {
+                office: [234, 136], // Посылка склад-склад, Посылка склад-склад (эконом)
+                door: [233, 137]    // Посылка дверь-дверь, Посылка склад-дверь
+            },
+
+            // Обработчики событий
             onCalculate: function(data) {
                 console.log("CDEK onCalculate raw data:", data);
                 
                 if (!data || !data[0]) {
                     document.getElementById('tariffs-list').innerHTML = 
-                        `<div class="status error">Ошибка получения тарифов. Откройте консоль (F12), чтобы увидеть детали ошибки от сервера.</div>`;
+                        `<div class="status error">Ошибка получения тарифов. Откройте консоль (F12), чтобы увидеть детали.</div>`;
                     return;
                 }
 
@@ -264,7 +304,6 @@
         const data = tariffsData[0];
         const categories = [
             { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' },
-            { key: 'pickup', title: '📦 До постамата' },
             { key: 'door', title: '🚪 До двери' }
         ];
 
