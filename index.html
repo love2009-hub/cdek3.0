@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды с доставкой СДЭК</title>
-    <!-- Подключение виджета СДЭК -->
+    <!-- Подключение виджета СДЭК версии 4 -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
@@ -133,14 +133,25 @@
                 return;
             }
 
+            // Инициализация виджета СДЭК с явными координатами Чебоксар
             cdekWidget = new window.CDEKWidget({
-                from: 'Чебоксары', // ЖЕСТКО ЗАФИКСИРОВАННЫЙ ГОРОД ОТПРАВИТЕЛЯ
+                // Город отправителя жестко зафиксирован как Чебоксары с кодом СДЭК
+                from: {
+                    city: 'Чебоксары',
+                    code: '137' // Официальный код города Чебоксары в системе СДЭК
+                },
                 root: 'cdek-map',
-                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', 
-                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
-                defaultLocation: destinationCity, // Город получателя
-                goods: [goods], // Передаем точные габариты для расчета тарифов
+                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', // Ваш Yandex API Key
+                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', // Ваш Cloudflare Worker
+                // Начальная позиция карты - координаты Чебоксар
+                defaultLocation: {
+                    latitude: 56.1290,
+                    longitude: 47.2538
+                },
+                // Передаем точные габариты товара для расчета тарифов
+                goods: [goods],
                 onChoose: function(pvz) {
+                    // Автоматическое заполнение адреса при выборе ПВЗ
                     const fullAddress = pvz.address ? `${pvz.city}, ${pvz.address}` : (pvz.name || '');
                     document.getElementById('address-input').value = fullAddress;
                 }
@@ -148,7 +159,7 @@
         }
 
         // =====================================================================
-        // ЛОГИКА ПОИСКА ГОРОДА (Исправленная, чтобы не было "Россия")
+        // ЛОГИКА ПОИСКА ГОРОДА (Яндекс Геокодер)
         // =====================================================================
         async function searchCity() {
             const cityInput = document.getElementById('city-input').value.trim();
@@ -168,11 +179,11 @@
                 const response = await fetch(geocoderUrl);
                 const data = await response.json();
                 
-                let correctCityName = cityInput; // По умолчанию оставляем то, что ввел пользователь
+                let correctCityName = cityInput;
                 
                 const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
                 if (geoObject) {
-                    // Пытаемся найти компонент типа "locality" (город/населенный пункт) в структурированных данных
+                    // Ищем компонент типа "locality" (город/населенный пункт)
                     const components = geoObject.metaDataProperty.GeocoderMetaData.Address.Components;
                     const cityComponent = components.find(c => c.kind === 'locality');
                     
@@ -182,10 +193,9 @@
                         // Если locality не найден, берем первое значение после страны
                         const formatted = geoObject.metaDataProperty.GeocoderMetaData.Address.formatted;
                         const parts = formatted.split(',');
-                        // parts[0] обычно "Россия", parts[1] - город/область
                         correctCityName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                         
-                        // Дополнительная защита от слова "Россия"
+                        // Защита от слова "Россия"
                         if (correctCityName.toLowerCase() === 'россия') {
                             correctCityName = parts.length > 2 ? parts[2].trim() : cityInput;
                         }
