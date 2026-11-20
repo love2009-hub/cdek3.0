@@ -3,293 +3,778 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Магазин одежды с доставкой СДЭК</title>
-    <!-- Подключение виджета СДЭК -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
+    <title>Магазин одежды — доставка СДЭК из Чебоксар</title>
+
+    <!-- Виджет СДЭК -->
+    <script
+        type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4"
+        charset="utf-8"
+    ></script>
+
+    <!-- JavaScript API Яндекс Карт + Геокодер -->
+    <script
+        src="https://api-maps.yandex.ru/2.1/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&lang=ru_RU"
+        type="text/javascript"
+    ></script>
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
-        h2 { text-align: center; margin-bottom: 10px; }
-        
-        .cart-status { text-align: center; font-size: 18px; font-weight: bold; color: #28a745; margin-bottom: 20px; min-height: 27px; }
-
-        .products { display: flex; gap: 20px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap; }
-        .product-card { 
-            border: 2px solid #e0e0e0; padding: 20px; border-radius: 12px; width: 250px; 
-            background: white; text-align: center; transition: transform 0.2s, box-shadow 0.2s;
+        * {
+            box-sizing: border-box;
         }
-        .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
-        .product-card h3 { margin-top: 0; color: #007bff; }
-        .product-card .price { font-size: 20px; font-weight: bold; margin: 15px 0; }
-        
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; width: 100%; }
-        .btn-cart { background-color: #28a745; color: white; }
-        .btn-cart:hover { background-color: #218838; }
-        .btn-search { background-color: #007bff; color: white; width: auto; padding: 12px 24px; }
-        .btn-search:hover { background-color: #0056b3; }
 
-        .controls { margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; }
-        .input-group:last-child { margin-bottom: 0; }
-        .input-group label { min-width: 140px; font-weight: bold; color: #555; }
-        input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; flex-grow: 1; font-size: 14px; min-width: 200px; }
-        input:focus { outline: none; border-color: #007bff; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
 
-        #cdek-map { width: 100%; height: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; }
-        .hint { display: flex; align-items: center; justify-content: center; height: 100%; color: #777; font-size: 16px; text-align: center; padding: 20px; }
-        
-        .debug-info { background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; color: #856404; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        .sender-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .product-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            border: 2px solid #e5e5e5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .product-card h3 {
+            margin-top: 0;
+            color: #0d6efd;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .btn-cart {
+            width: 100%;
+            background: #198754;
+            color: #fff;
+        }
+
+        .btn-cart:hover {
+            background: #157347;
+        }
+
+        .btn-search {
+            background: #0d6efd;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background: #0b5ed7;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .input-row:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            min-width: 150px;
+            font-weight: bold;
+        }
+
+        input {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        .cart {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .cart-empty {
+            color: #777;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            border-bottom: 1px solid #eee;
+            padding: 8px 0;
+        }
+
+        .cart-total {
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        #cdek-map {
+            width: 100%;
+            height: 620px;
+            background: #fff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .tariffs {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .tariff-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .tariff-title {
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 6px;
+        }
+
+        .tariff-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #198754;
+        }
+
+        .status {
+            color: #555;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #198754;
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
+<div class="page">
 
-    <h2>Магазин одежды</h2>
-    
-    <div class="debug-info" id="debug-info">
-        Отправитель: Чебоксары (координаты загружаются...)
-    </div>
-    
-    <div class="cart-status" id="cart-status">Корзина пуста. Выберите товар для расчета доставки из Чебоксар.</div>
+    <h1>Магазин одежды</h1>
 
-    <div class="products">
-        <div class="product-card">
-            <h3>Зимняя куртка</h3>
-            <p class="price">12 500 ₽</p>
-            <button class="btn btn-cart" onclick="addToCart(0)">Добавить в корзину</button>
-        </div>
-        <div class="product-card">
-            <h3>Джинсы классические</h3>
-            <p class="price">4 500 ₽</p>
-            <button class="btn btn-cart" onclick="addToCart(1)">Добавить в корзину</button>
-        </div>
-        <div class="product-card">
-            <h3>Хлопковая футболка</h3>
-            <p class="price">1 500 ₽</p>
-            <button class="btn btn-cart" onclick="addToCart(2)">Добавить в корзину</button>
-        </div>
+    <div class="sender-info">
+        Отправка всегда из города: Чебоксары
     </div>
 
-    <div class="controls">
-        <div class="input-group">
-            <label for="city-input">Город получателя:</label>
-            <input type="text" id="city-input" value="Чебоксары" placeholder="Введите город доставки">
-            <button class="btn btn-search" onclick="searchCity()">Найти</button>
+    <div class="products" id="products"></div>
+
+    <div class="cart">
+        <h2>Корзина</h2>
+        <div id="cart-list" class="cart-empty">Корзина пуста</div>
+        <div id="cart-total" class="cart-total"></div>
+        <button class="btn-clear" onclick="clearCart()">Очистить корзину</button>
+    </div>
+
+    <div class="panel">
+        <div class="input-row">
+            <label for="city-input">Город</label>
+            <input
+                id="city-input"
+                type="text"
+                value="Чебоксары"
+                placeholder="Введите любой город, например Казань"
+            >
+            <button class="btn-search" id="search-button" onclick="searchCity()">Найти</button>
         </div>
-        
-        <div class="input-group">
-            <label for="address-input">Адрес / ПВЗ:</label>
-            <input type="text" id="address-input" placeholder="Заполнится автоматически при выборе ПВЗ на карте">
+
+        <div class="input-row">
+            <label for="address-input">Адрес</label>
+            <input
+                id="address-input"
+                type="text"
+                placeholder="Адрес ПВЗ заполнится автоматически, но можно ввести вручную"
+            >
+        </div>
+
+        <div class="status" id="status">
+            Введите город и нажмите «Найти».
         </div>
     </div>
 
-    <div id="cdek-map">
-        <div class="hint">Добавьте товар в корзину, чтобы увидеть варианты доставки из Чебоксар</div>
+    <div class="tariffs">
+        <h2>Тарифы СДЭК</h2>
+        <div id="tariffs-list">
+            Добавьте товар в корзину, чтобы рассчитать тарифы из Чебоксар.
+        </div>
     </div>
 
-    <script>
-        // =====================================================================
-        // ГАБАРИТЫ ТОВАРОВ (Скрыты в коде, не отображаются на сайте)
-        // =====================================================================
-        const productsData = [
-            {
-                name: "Зимняя куртка",
+    <div id="cdek-map"></div>
+
+</div>
+
+<script>
+    const YANDEX_API_KEY = '89e052c4-e455-4c32-bca9-f83a2464c827';
+
+    const WORKER_URL = 'https://cdek.aroslavrazzivin.workers.dev/';
+
+    // Город отправителя всегда Чебоксары
+    const SENDER_CITY = 'Чебоксары';
+
+    // Товары. Габариты есть только в коде и не выводятся на сайт.
+    const PRODUCTS = [
+        {
+            id: 'jacket',
+            name: 'Зимняя куртка',
+            price: 12500,
+            dimensions: {
                 "width": 40,
-                "height": 60,
-                "length": 15,
+                "height": 15,
+                "length": 60,
                 "weight": 1500
-            },
-            {
-                name: "Джинсы классические",
+            }
+        },
+        {
+            id: 'jeans',
+            name: 'Джинсы классические',
+            price: 4500,
+            dimensions: {
                 "width": 30,
-                "height": 10,
+                "height": 8,
                 "length": 40,
                 "weight": 800
-            },
-            {
-                name: "Хлопковая футболка",
+            }
+        },
+        {
+            id: 'tshirt',
+            name: 'Хлопковая футболка',
+            price: 1500,
+            dimensions: {
                 "width": 25,
-                "height": 5,
+                "height": 4,
                 "length": 30,
                 "weight": 300
             }
-        ];
+        }
+    ];
 
-        let currentGoods = null; 
-        let cdekWidget = null;
-        let senderCoordinates = null; // Координаты Чебоксар
+    let cart = [];
 
-        // =====================================================================
-        // ПОЛУЧЕНИЕ КООРДИНАТ ЧЕБОКСАР ЧЕРЕЗ ЯНДЕКС ГЕОКОДЕР
-        // =====================================================================
-        async function getCheboksaryCoordinates() {
-            const geocoderUrl = `https://geocode-maps.yandex.ru/1.x/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&geocode=Чебоксары&format=json`;
-            
-            try {
-                const response = await fetch(geocoderUrl);
-                const data = await response.json();
-                
-                const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
-                if (geoObject) {
-                    const coordinates = geoObject.Point.pos.split(' ');
-                    senderCoordinates = {
-                        longitude: parseFloat(coordinates[0]),
-                        latitude: parseFloat(coordinates[1])
-                    };
-                    console.log('Чебоксары координаты:', senderCoordinates);
-                    document.getElementById('debug-info').innerText = 
-                        `Отправитель: Чебоксары (координаты: ${senderCoordinates.latitude.toFixed(4)}, ${senderCoordinates.longitude.toFixed(4)})`;
-                    return senderCoordinates;
-                }
-            } catch (error) {
-                console.error('Ошибка получения координат Чебоксар:', error);
-            }
-            
-            return null;
+    let recipientLocation = {
+        city: 'Чебоксары',
+        lat: null,
+        lon: null
+    };
+
+    let cdekWidget = null;
+
+    function formatPrice(value) {
+        return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
+    }
+
+    function renderProducts() {
+        const container = document.getElementById('products');
+
+        container.innerHTML = PRODUCTS.map((product) => {
+            return `
+                <div class="product-card">
+                    <h3>${product.name}</h3>
+                    <div class="price">${formatPrice(product.price)}</div>
+                    <button class="btn-cart" onclick="addToCart('${product.id}')">
+                        Добавить в корзину
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function addToCart(productId) {
+        const product = PRODUCTS.find((item) => item.id === productId);
+
+        if (!product) {
+            return;
         }
 
-        // =====================================================================
-        // ЛОГИКА КОРЗИНЫ И ВИДЖЕТА
-        // =====================================================================
-        
-        function addToCart(index) {
-            currentGoods = productsData[index];
-            
-            document.getElementById('cart-status').innerText = `В корзине: ${currentGoods.name} (доставка из Чебоксар)`;
-            console.log('Товар добавлен в корзину:', currentGoods);
-            
-            const destinationCity = document.getElementById('city-input').value.trim() || 'Чебоксары';
-            initWidget(destinationCity, currentGoods);
+        cart.push(product);
+
+        renderCart();
+
+        setStatus(
+            `Товар «${product.name}» добавлен. СДЭК считает тарифы из Чебоксар.`,
+            'success'
+        );
+
+        initCdekWidget();
+
+        calculateTariffs();
+    }
+
+    function clearCart() {
+        cart = [];
+
+        renderCart();
+
+        document.getElementById('tariffs-list').innerHTML =
+            'Добавьте товар в корзину, чтобы рассчитать тарифы из Чебоксар.';
+
+        initCdekWidget();
+
+        setStatus('Корзина очищена.');
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cart-list');
+        const total = document.getElementById('cart-total');
+
+        if (!cart.length) {
+            list.className = 'cart-empty';
+            list.innerHTML = 'Корзина пуста';
+            total.innerHTML = '';
+            return;
         }
 
-        async function initWidget(destinationCity, goods) {
-            const container = document.getElementById('cdek-map');
-            container.innerHTML = ''; 
+        list.className = '';
 
-            if (!goods) {
-                container.innerHTML = '<div class="hint">Добавьте товар в корзину, чтобы увидеть варианты доставки из Чебоксар</div>';
-                return;
-            }
+        list.innerHTML = cart.map((item, index) => {
+            return `
+                <div class="cart-item">
+                    <span>${index + 1}. ${item.name}</span>
+                    <strong>${formatPrice(item.price)}</strong>
+                </div>
+            `;
+        }).join('');
 
-            // Если координаты еще не получены, получаем их
-            if (!senderCoordinates) {
-                await getCheboksaryCoordinates();
-            }
+        const sum = cart.reduce((acc, item) => acc + item.price, 0);
 
-            console.log('Инициализация виджета с параметрами:', {
-                from: 'Чебоксары',
-                fromCoordinates: senderCoordinates,
-                to: destinationCity,
-                goods: goods
-            });
+        total.innerHTML = 'Итого: ' + formatPrice(sum);
+    }
 
-            // Конфигурация виджета с координатами отправителя
-            const widgetConfig = {
-                from: 'Чебоксары',
-                root: 'cdek-map',
-                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', 
-                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
-                defaultLocation: destinationCity,
-                goods: [goods],
-                onChoose: function(pvz) {
-                    const fullAddress = pvz.address ? `${pvz.city}, ${pvz.address}` : (pvz.name || '');
-                    document.getElementById('address-input').value = fullAddress;
-                    console.log('Выбран ПВЗ:', pvz);
-                }
+    function getPackagesFromCart() {
+        return cart.map((item) => {
+            return {
+                "width": item.dimensions.width,
+                "height": item.dimensions.height,
+                "length": item.dimensions.length,
+                "weight": item.dimensions.weight
             };
+        });
+    }
 
-            // Добавляем координаты отправителя, если они получены
-            if (senderCoordinates) {
-                widgetConfig.fromCode = 'Чебоксары';
-                // Передаем координаты через дополнительные параметры
-                widgetConfig.senderAddress = {
-                    city: 'Чебоксары',
-                    latitude: senderCoordinates.latitude,
-                    longitude: senderCoordinates.longitude
-                };
-            }
+    function setStatus(message, type = '') {
+        const status = document.getElementById('status');
 
-            console.log('Конфигурация виджета:', widgetConfig);
+        status.className = 'status';
 
-            cdekWidget = new window.CDEKWidget(widgetConfig);
+        if (type) {
+            status.classList.add(type);
         }
 
-        // =====================================================================
-        // ЛОГИКА ПОИСКА ГОРОДА ПОЛУЧАТЕЛЯ
-        // =====================================================================
-        async function searchCity() {
-            const cityInput = document.getElementById('city-input').value.trim();
-            if (!cityInput) {
-                alert('Пожалуйста, введите название города');
-                return;
-            }
+        status.innerHTML = message;
+    }
 
-            const geocoderUrl = `https://geocode-maps.yandex.ru/1.x/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&geocode=${encodeURIComponent(cityInput)}&format=json`;
-            
+    function initCdekWidget() {
+        const container = document.getElementById('cdek-map');
+
+        if (cdekWidget && typeof cdekWidget.destroy === 'function') {
             try {
-                const searchBtn = document.querySelector('.btn-search');
-                const originalText = searchBtn.innerText;
-                searchBtn.innerText = 'Поиск...';
-                searchBtn.disabled = true;
+                cdekWidget.destroy();
+            } catch (error) {
+                console.warn('Не удалось уничтожить старый виджет:', error);
+            }
+        }
 
-                const response = await fetch(geocoderUrl);
-                const data = await response.json();
-                
-                let correctCityName = cityInput;
-                let cityCoordinates = null;
-                
-                const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
-                if (geoObject) {
-                    // Получаем координаты города получателя
-                    const coordinates = geoObject.Point.pos.split(' ');
-                    cityCoordinates = {
-                        longitude: parseFloat(coordinates[0]),
-                        latitude: parseFloat(coordinates[1])
-                    };
-                    
-                    // Ищем название города
-                    const components = geoObject.metaDataProperty.GeocoderMetaData.Address.Components;
-                    const cityComponent = components.find(c => c.kind === 'locality');
-                    
-                    if (cityComponent) {
-                        correctCityName = cityComponent.name;
-                    } else {
-                        const formatted = geoObject.metaDataProperty.GeocoderMetaData.Address.formatted;
-                        const parts = formatted.split(',');
-                        correctCityName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
-                        
-                        if (correctCityName.toLowerCase() === 'россия') {
-                            correctCityName = parts.length > 2 ? parts[2].trim() : cityInput;
+        container.innerHTML = '';
+
+        const config = {
+            // Отправитель всегда Чебоксары
+            from: SENDER_CITY,
+
+            root: 'cdek-map',
+
+            apiKey: YANDEX_API_KEY,
+
+            servicePath: WORKER_URL,
+
+            // Город получателя
+            defaultLocation: recipientLocation.city,
+
+            onChoose: function (...args) {
+                handlePvzChoose(args);
+            }
+        };
+
+        // Если товары есть в корзине — передаём их габариты в виджет
+        if (cart.length) {
+            config.goods = getPackagesFromCart();
+        }
+
+        cdekWidget = new window.CDEKWidget(config);
+    }
+
+    function handlePvzChoose(args) {
+        const office = args.find((arg) => {
+            return arg && typeof arg === 'object' && (
+                arg.location ||
+                arg.address ||
+                arg.address_full ||
+                arg.code
+            );
+        });
+
+        if (!office) {
+            return;
+        }
+
+        const location = office.location || {};
+
+        const city =
+            location.city ||
+            office.city ||
+            recipientLocation.city;
+
+        const address =
+            location.address_full ||
+            location.address ||
+            office.address_full ||
+            office.address ||
+            office.name ||
+            '';
+
+        document.getElementById('address-input').value =
+            city && address ? `${city}, ${address}` : address;
+
+        setStatus('ПВЗ выбран. Адрес заполнен автоматически.', 'success');
+
+        // После выбора ПВЗ ещё раз пересчитываем тарифы
+        calculateTariffs();
+    }
+
+    async function searchCity() {
+        const input = document.getElementById('city-input');
+        const button = document.getElementById('search-button');
+
+        const query = input.value.trim();
+
+        if (!query) {
+            alert('Введите город');
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Поиск...';
+
+        try {
+            const result = await geocodeCity(query);
+
+            recipientLocation = result;
+
+            input.value = result.city;
+
+            setStatus(
+                `Город получателя: ${result.city}. Отправитель: Чебоксары.`,
+                'success'
+            );
+
+            initCdekWidget();
+
+            if (cart.length) {
+                calculateTariffs();
+            }
+        } catch (error) {
+            console.error(error);
+
+            setStatus(
+                'Не удалось найти город через Яндекс Геокодер. Проверьте название.',
+                'error'
+            );
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Найти';
+        }
+    }
+
+    function geocodeCity(query) {
+        return new Promise((resolve, reject) => {
+            ymaps.ready(async () => {
+                try {
+                    // Используем именно JavaScript API Геокодера Яндекса
+                    const result = await ymaps.geocode(query, {
+                        kind: 'locality',
+                        results: 10
+                    });
+
+                    const geoObjects = result.geoObjects.toArray();
+
+                    if (!geoObjects.length) {
+                        reject(new Error('Город не найден'));
+                        return;
+                    }
+
+                    let selected = null;
+
+                    for (const geoObject of geoObjects) {
+                        const meta = geoObject.properties.get(
+                            'metaDataProperty.GeocoderMetaData'
+                        );
+
+                        const components =
+                            meta?.Address?.Components || [];
+
+                        const locality = components.find((component) => {
+                            return component.kind === 'locality';
+                        });
+
+                        if (locality && locality.name) {
+                            const coords = geoObject.geometry.getCoordinates();
+
+                            selected = {
+                                city: locality.name,
+                                lat: coords[0],
+                                lon: coords[1]
+                            };
+
+                            break;
                         }
                     }
-                }
 
-                document.getElementById('city-input').value = correctCityName;
-                console.log('Город получателя:', correctCityName, 'координаты:', cityCoordinates);
-                
-                if (currentGoods) {
-                    initWidget(correctCityName, currentGoods);
-                } else {
-                    alert('Город получателя установлен: ' + correctCityName + '. Теперь добавьте товар в корзину для расчета доставки из Чебоксар.');
-                }
+                    if (!selected) {
+                        const first = geoObjects[0];
+                        const name = first.properties.get('name');
+                        const coords = first.geometry.getCoordinates();
 
-                searchBtn.innerText = originalText;
-                searchBtn.disabled = false;
-            } catch (error) {
-                console.error('Ошибка Яндекс Геокодера:', error);
-                alert('Не удалось найти город. Проверьте название.');
-                const searchBtn = document.querySelector('.btn-search');
-                searchBtn.innerText = 'Найти';
-                searchBtn.disabled = false;
-            }
+                        if (
+                            !name ||
+                            name.toLowerCase() === 'россия'
+                        ) {
+                            reject(new Error('Не удалось определить город'));
+                            return;
+                        }
+
+                        selected = {
+                            city: name,
+                            lat: coords[0],
+                            lon: coords[1]
+                        };
+                    }
+
+                    resolve(selected);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+
+    async function calculateTariffs() {
+        const tariffsList = document.getElementById('tariffs-list');
+
+        if (!cart.length) {
+            tariffsList.innerHTML =
+                'Добавьте товар в корзину, чтобы рассчитать тарифы из Чебоксар.';
+            return;
         }
 
-        // =====================================================================
-        // ПЕРВИЧНАЯ ИНИЦИАЛИЗАЦИЯ
-        // =====================================================================
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Получаем координаты Чебоксар при загрузке страницы
-            await getCheboksaryCoordinates();
-            initWidget('Чебоксары', null);
+        tariffsList.innerHTML = 'Расчёт тарифов СДЭК...';
+
+        try {
+            const response = await fetch(WORKER_URL + '?action=calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'calculate',
+
+                    // 4 = склад-склад, подходит для доставки до ПВЗ
+                    type: 4,
+
+                    // Получатель
+                    to_city: recipientLocation.city,
+                    to_lat: recipientLocation.lat,
+                    to_lon: recipientLocation.lon,
+
+                    // Габариты каждого товара из корзины
+                    packages: getPackagesFromCart()
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || JSON.stringify(data));
+            }
+
+            renderTariffs(data);
+        } catch (error) {
+            console.error('Ошибка расчёта тарифов:', error);
+
+            tariffsList.innerHTML = `
+                <div class="error">
+                    Ошибка расчёта тарифов: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function renderTariffs(data) {
+        const tariffsList = document.getElementById('tariffs-list');
+
+        const tariffs = data.tariffs || [];
+
+        if (!tariffs.length) {
+            tariffsList.innerHTML =
+                'СДЭК не вернул доступные тарифы для этих габаритов и направления.';
+            return;
+        }
+
+        const sorted = tariffs.slice().sort((a, b) => {
+            return Number(a.delivery_sum || a.sum || 0) -
+                   Number(b.delivery_sum || b.sum || 0);
         });
-    </script>
+
+        tariffsList.innerHTML = sorted.map((tariff) => {
+            const price =
+                tariff.delivery_sum ??
+                tariff.sum ??
+                tariff.price ??
+                null;
+
+            const min =
+                tariff.period_min ??
+                tariff.calendar_min ??
+                '?';
+
+            const max =
+                tariff.period_max ??
+                tariff.calendar_max ??
+                '?';
+
+            const mode = getDeliveryModeName(tariff.delivery_mode);
+
+            return `
+                <div class="tariff-card">
+                    <div class="tariff-title">
+                        ${tariff.tariff_name || 'Тариф СДЭК'}
+                    </div>
+                    <div>
+                        Код тарифа: ${tariff.tariff_code || '-'}
+                    </div>
+                    <div>
+                        Тип доставки: ${mode}
+                    </div>
+                    <div>
+                        Срок: ${min}–${max} дн.
+                    </div>
+                    <div class="tariff-price">
+                        ${price !== null ? formatPrice(price) : 'Цена не указана'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getDeliveryModeName(mode) {
+        const modes = {
+            1: 'дверь-дверь',
+            2: 'дверь-склад',
+            3: 'склад-дверь',
+            4: 'склад-склад',
+            5: 'склад-склад',
+            6: 'дверь-постамат',
+            7: 'склад-постамат'
+        };
+
+        return modes[mode] || 'ПВЗ / склад';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderProducts();
+        renderCart();
+
+        document.getElementById('city-input').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                searchCity();
+            }
+        });
+
+        ymaps.ready(async () => {
+            try {
+                recipientLocation = await geocodeCity('Чебоксары');
+            } catch (error) {
+                console.warn(error);
+            }
+
+            initCdekWidget();
+        });
+    });
+</script>
+
 </body>
 </html>
