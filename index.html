@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды — доставка СДЭК</title>
     
+    <!-- Исправление ошибки favicon.ico 404 -->
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
+    <!-- Виджет СДЭК -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
+    <!-- JavaScript API Яндекс Карт (включает Геокодер и Геосаджест) -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&lang=ru_RU" type="text/javascript"></script>
     
     <style>
@@ -98,7 +101,7 @@
         </div>
         <div class="input-row">
             <label for="address-input">Адрес / ПВЗ:</label>
-            <input id="address-input" type="text" placeholder="Заполнится автоматически при выборе ПВЗ на карте">
+            <input id="address-input" type="text" placeholder="Заполнится автоматически при выборе ПВЗ">
         </div>
         <div class="status info" id="status">Введите город и нажмите «Найти», затем добавьте товар в корзину.</div>
     </div>
@@ -136,11 +139,26 @@
     const WORKER_URL = 'https://cdek.aroslavrazzivin.workers.dev/';
     const SENDER_CITY = 'Чебоксары';
 
-    // ГАБАРИТЫ ТОВАРОВ (строго в запрошенном формате, скрыты в коде)
+    // ГАБАРИТЫ ТОВАРОВ: строго в запрошенном формате, скрыты в коде, не видны на сайте
     const PRODUCTS = [
-        { id: 'jacket', name: 'Зимняя куртка', price: 12500, dimensions: { "width": 40, "height": 60, "length": 15, "weight": 1500 } },
-        { id: 'jeans', name: 'Джинсы классические', price: 4500, dimensions: { "width": 30, "height": 40, "length": 10, "weight": 800 } },
-        { id: 'tshirt', name: 'Хлопковая футболка', price: 1500, dimensions: { "width": 25, "height": 30, "length": 4, "weight": 300 } }
+        { 
+            id: 'jacket', 
+            name: 'Зимняя куртка', 
+            price: 12500, 
+            dimensions: { "width": 40, "height": 60, "length": 15, "weight": 1500 } 
+        },
+        { 
+            id: 'jeans', 
+            name: 'Джинсы классические', 
+            price: 4500, 
+            dimensions: { "width": 30, "height": 40, "length": 10, "weight": 800 } 
+        },
+        { 
+            id: 'tshirt', 
+            name: 'Хлопковая футболка', 
+            price: 1500, 
+            dimensions: { "width": 25, "height": 30, "length": 4, "weight": 300 } 
+        }
     ];
 
     let cart = [];
@@ -206,9 +224,13 @@
 
     function getWidgetGoods() {
         return cart.map(item => ({
-            name: item.name, ware_key: item.id, amount: 1,
-            weight: item.dimensions.weight, length: item.dimensions.length,
-            width: item.dimensions.width, height: item.dimensions.height
+            name: item.name, 
+            ware_key: item.id, 
+            amount: 1,
+            weight: item.dimensions.weight, 
+            length: item.dimensions.length,
+            width: item.dimensions.width, 
+            height: item.dimensions.height
         }));
     }
 
@@ -216,6 +238,61 @@
         const status = document.getElementById('status');
         status.className = `status ${type}`;
         status.textContent = message;
+    }
+
+    // =====================================================================
+    // ТОЧНЫЙ ПАРСИНГ ДАННЫХ ОТ ВИДЖЕТА (на основе вашего примера массива)
+    // =====================================================================
+    function extractPvzAndTariff(data) {
+        let pvz = null;
+        let tariff = null;
+
+        console.log("=== CDEK onChoose RAW DATA ===", data);
+
+        // Основной сценарий: массив [тип_доставки, объект_тарифа, объект_ПВЗ]
+        if (Array.isArray(data) && data.length >= 3) {
+            tariff = data[1]; // Здесь есть delivery_sum и tariff_code
+            pvz = data[2];    // Здесь есть city и address
+            console.log("Распознан формат массива [тип, тариф, ПВЗ]");
+        } 
+        // Резервный сценарий: если виджет вдруг пришлет плоский объект
+        else if (data && typeof data === 'object') {
+            if (data.delivery_sum !== undefined && data.tariff_code !== undefined) {
+                tariff = data;
+            }
+            if (data.city || data.address || data.address_full) {
+                pvz = data;
+            } else if (data.location && (data.location.city || data.location.address)) {
+                pvz = data.location;
+            }
+        }
+
+        return { pvz, tariff };
+    }
+
+    // =====================================================================
+    // ФОРМАТИРОВАНИЕ АДРЕСА: "Город, Улица, Дом" без дублирования
+    // =====================================================================
+    function formatPvzAddress(pvz) {
+        if (!pvz) return '';
+
+        const city = pvz.city || (pvz.location && pvz.location.city) || '';
+        const address = pvz.address || pvz.address_full || (pvz.location && pvz.location.address) || pvz.name || '';
+
+        if (!city && !address) return '';
+
+        if (city && address) {
+            const cityLower = city.toLowerCase().replace('ё', 'е');
+            const addressLower = address.toLowerCase().replace('ё', 'е');
+            
+            // Если адрес уже содержит название города, не дублируем его
+            if (addressLower.includes(cityLower)) {
+                return address;
+            }
+            return `${city}, ${address}`;
+        }
+
+        return address || city;
     }
 
     function initCdekWidget() {
@@ -231,7 +308,7 @@
         }
 
         const config = {
-            from: SENDER_CITY,
+            from: SENDER_CITY, // ЖЕСТКО: Чебоксары
             root: 'cdek-map',
             apiKey: YANDEX_API_KEY,
             servicePath: WORKER_URL,
@@ -254,63 +331,40 @@
             },
             
             // =====================================================================
-            // ЖЕСТКАЯ ОБРАБОТКА ВЫБОРА ПВЗ (строго под ваш пример массива)
+            // ОБРАБОТКА ВЫБОРА ПВЗ И ТАРИФА (АВТОЗАПОЛНЕНИЕ + ИТОГИ)
             // =====================================================================
             onChoose: function(data) {
-                console.log("=== CDEK onChoose RAW DATA ===", data);
+                const { pvz, tariff } = extractPvzAndTariff(data);
 
-                // Проверяем, что пришел массив из 3 элементов: [тип, тариф, пвз]
-                if (Array.isArray(data) && data.length >= 3) {
-                    const tariffData = data[1]; // Информация о тарифе (delivery_sum, tariff_code)
-                    const pvzData = data[2];    // Информация о ПВЗ (city, address)
-
-                    // 1. АВТОМАТИЧЕСКОЕ ЗАПОЛНЕНИЕ АДРЕСА
-                    if (pvzData) {
-                        const city = pvzData.city || "";
-                        const address = pvzData.address || pvzData.name || "";
-                        
-                        let fullAddress = "";
-                        if (city && address) {
-                            const cityLower = city.toLowerCase();
-                            // Если адрес уже содержит название города, не дублируем его
-                            if (address.toLowerCase().includes(cityLower) || address.toLowerCase().includes(cityLower.replace('ё', 'е'))) {
-                                fullAddress = address;
-                            } else {
-                                fullAddress = `${city}, ${address}`;
-                            }
-                        } else {
-                            fullAddress = address || city;
-                        }
-
-                        if (fullAddress) {
-                            document.getElementById('address-input').value = fullAddress;
-                            setStatus('ПВЗ выбран. Адрес: ' + fullAddress, 'success');
-                        }
+                // 1. АВТОЗАПОЛНЕНИЕ ПОЛЯ АДРЕСА
+                if (pvz) {
+                    const fullAddress = formatPvzAddress(pvz);
+                    if (fullAddress) {
+                        document.getElementById('address-input').value = fullAddress;
+                        setStatus('ПВЗ выбран. Адрес: ' + fullAddress, 'success');
                     }
+                }
 
-                    // 2. ОБНОВЛЕНИЕ ИТОГОВОЙ СТОИМОСТИ ИЗ ТАРИФА
-                    if (tariffData && tariffData.tariff_code !== undefined) {
-                        // Ищем этот тариф в нашем списке доступных тарифов
-                        const matchedTariff = availableTariffs.find(t => t.tariff_code === tariffData.tariff_code);
-                        
-                        if (matchedTariff) {
-                            selectedTariff = matchedTariff;
-                            updateTariffSelection(); // Подсвечиваем карточку зеленым
-                            updateTotal(); // Пересчитываем сумму (товары + delivery_sum)
-                            console.log("✅ Тариф успешно применен:", matchedTariff.tariff_name, "Сумма:", matchedTariff.delivery_sum);
-                        } else {
-                            // Если тарифа нет в списке, берем данные напрямую из виджета
-                            selectedTariff = {
-                                tariff_code: tariffData.tariff_code,
-                                tariff_name: tariffData.tariff_name || 'Выбранный тариф',
-                                delivery_sum: tariffData.delivery_sum
-                            };
-                            updateTotal();
-                            console.log("✅ Тариф применен напрямую из данных виджета:", selectedTariff.delivery_sum);
-                        }
+                // 2. ОБНОВЛЕНИЕ ТАРИФА И ИТОГОВОЙ СТОИМОСТИ (из delivery_sum)
+                if (tariff && tariff.tariff_code !== undefined) {
+                    const matchedTariff = availableTariffs.find(t => t.tariff_code === tariff.tariff_code);
+                    
+                    if (matchedTariff) {
+                        selectedTariff = matchedTariff;
+                        updateTariffSelection();
+                        updateTotal();
+                        console.log("Тариф выбран автоматически:", matchedTariff.tariff_name, "Цена:", matchedTariff.delivery_sum);
+                    } else {
+                        // Если тарифа нет в нашем списке, используем данные напрямую из виджета
+                        selectedTariff = {
+                            tariff_code: tariff.tariff_code,
+                            tariff_name: tariff.tariff_name || 'Выбранный тариф',
+                            delivery_sum: tariff.delivery_sum
+                        };
+                        document.querySelectorAll('.tariff-card').forEach(card => card.classList.remove('selected'));
+                        updateTotal();
+                        console.log("Тариф использован напрямую из данных виджета:", selectedTariff);
                     }
-                } else {
-                    console.warn("Неожиданный формат данных от виджета:", data);
                 }
             }
         };
@@ -324,7 +378,7 @@
         availableTariffs = [];
 
         const data = tariffsData[0];
-        const categories = [ { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' }, { key: 'door', title: '🚪 До двери' } ];
+        const categories = [ { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' }, { key: 'door', title: '🚪 До двери' }, { key: 'pickup', title: '📦 До постамата' } ];
         let hasAny = false;
 
         categories.forEach(cat => {
@@ -418,7 +472,7 @@
         const errors = [];
         if (!cart.length) errors.push('Корзина пуста — добавьте хотя бы один товар.');
         if (!document.getElementById('city-input').value.trim()) errors.push('Не указан город получателя.');
-        if (!document.getElementById('address-input').value.trim()) errors.push('Не указан адрес доставки / ПВЗ. Выберите ПВЗ на карте или введите адрес вручную.');
+        if (!document.getElementById('address-input').value.trim()) errors.push('Не указан адрес доставки / ПВЗ. Выберите ПВЗ на карте.');
         if (!selectedTariff) errors.push('Не выбран тариф доставки. Кликните по тарифу или выберите ПВЗ на карте.');
         
         if (errors.length === 0) {
@@ -455,6 +509,7 @@
         return new Promise((resolve, reject) => {
             ymaps.ready(async () => {
                 try {
+                    // Используем JavaScript API Геокодера Яндекса
                     const result = await ymaps.geocode(query, { kind: 'locality', results: 10 });
                     const geoObjects = result.geoObjects.toArray();
                     if (!geoObjects.length) { reject(new Error('Город не найден')); return; }
@@ -464,6 +519,7 @@
                         const meta = geoObject.properties.get('metaDataProperty.GeocoderMetaData');
                         const components = meta?.Address?.Components || [];
                         const locality = components.find(c => c.kind === 'locality');
+                        
                         if (locality && locality.name && locality.name.toLowerCase() !== 'россия') {
                             const coords = geoObject.geometry.getCoordinates();
                             selected = { city: locality.name, lat: coords[0], lon: coords[1] };
@@ -484,8 +540,22 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        renderProducts(); renderCart(); initCdekWidget();
-        document.getElementById('city-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchCity(); });
+        renderProducts(); 
+        renderCart(); 
+        initCdekWidget();
+        
+        document.getElementById('city-input').addEventListener('keydown', (e) => { 
+            if (e.key === 'Enter') searchCity(); 
+        });
+
+        // Подключаем JavaScript API Геосаджеста Яндекса для поля адреса
+        ymaps.ready(() => {
+            try {
+                ymaps.suggest(document.getElementById('address-input'));
+            } catch (e) {
+                console.warn("Геосаджест не инициализирован", e);
+            }
+        });
     });
 </script>
 
