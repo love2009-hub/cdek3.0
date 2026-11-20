@@ -2,22 +2,35 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Ключевой мета-тег для мобильных: запрещает нежелательный зум, адаптирует ширину -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ВАЖНО: убраны maximum-scale и user-scalable=no, они ломали карту на iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0d6efd">
     <title>Магазин одежды — доставка СДЭК</title>
     
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
-    <!-- Виджет СДЭК (автоматически адаптируется под тач-экраны) -->
+    <!-- ПРЕДЗАГРУЗКА критических ресурсов для ускорения на мобильных -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" as="script" crossorigin>
+    <link rel="preconnect" href="https://cdek.aroslavrazzivin.workers.dev">
+    <link rel="preconnect" href="https://api.cdek.ru">
+    
+    <!-- Виджет СДЭК v4 -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
-    <!-- JavaScript API Яндекс Карт (Геокодер + Геосаджест) -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&lang=ru_RU" type="text/javascript"></script>
+    
+    <!-- ВНИМАНИЕ: api-maps.yandex.ru/2.1 больше НЕ подключается! 
+         Это была главная причина ошибки "произошла непредвиденная ошибка при загрузке карты" на телефонах.
+         Виджет СДЭК сам использует свою версию Яндекс Карт. Мы используем только HTTP API Геокодера. -->
     
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f4f6f8; color: #222; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; 
+            background: #f4f6f8; 
+            color: #222; 
+            -webkit-text-size-adjust: 100%;
+        }
         .page { max-width: 1000px; margin: 0 auto; padding: 20px; }
         h1, h2 { text-align: center; margin-top: 0; }
         .sender-info { text-align: center; margin-bottom: 25px; color: #0d6efd; font-weight: bold; font-size: 18px; }
@@ -28,23 +41,55 @@
         .product-card h3 { margin-top: 0; color: #0d6efd; }
         .price { font-size: 22px; font-weight: bold; margin: 15px 0; color: #333; }
         
-        button { border: none; border-radius: 12px; padding: 14px 18px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; width: 100%; }
-        .btn-cart { background: #198754; color: #fff; min-height: 48px; } /* Мин. высота для пальца */
+        button { 
+            border: none; 
+            border-radius: 12px; 
+            padding: 14px 18px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px; 
+            transition: 0.2s; 
+            width: 100%;
+            touch-action: manipulation; /* Убирает задержку 300мс на мобильных */
+        }
+        .btn-cart { background: #198754; color: #fff; min-height: 48px; }
         .btn-cart:active { background: #157347; }
         .btn-search { background: #0d6efd; color: #fff; white-space: nowrap; min-height: 48px; width: auto; padding: 0 24px; }
         .btn-search:active { background: #0b5ed7; }
         .btn-clear { background: #dc3545; color: #fff; margin-top: 15px; min-height: 48px; }
         .btn-clear:active { background: #bb2d3b; }
-        .btn-checkout { background: #fd7e14; color: #fff; font-size: 18px; padding: 18px; margin-top: 20px; min-height: 56px; box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3); }
+        .btn-checkout { 
+            background: #fd7e14; 
+            color: #fff; 
+            font-size: 18px; 
+            padding: 18px; 
+            margin-top: 20px; 
+            min-height: 56px; 
+            box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3); 
+        }
         .btn-checkout:active { background: #e8590c; transform: translateY(1px); }
 
-        .panel, .cart, .tariffs-container, .total-container { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .panel, .cart, .tariffs-container, .total-container { 
+            background: #fff; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
         .input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
         .input-row:last-child { margin-bottom: 0; }
         label { min-width: 140px; font-weight: bold; color: #555; }
         
-        /* font-size: 16px предотвращает авто-зум на iOS Safari при фокусе на input */
-        input { flex: 1; min-width: 200px; padding: 14px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; min-height: 48px; }
+        /* font-size: 16px — критично для iOS, иначе авто-зум */
+        input { 
+            flex: 1; 
+            min-width: 200px; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: 1px solid #ccc; 
+            font-size: 16px; 
+            min-height: 48px; 
+        }
         input:focus { outline: none; border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }
 
         .cart-empty { color: #777; text-align: center; padding: 10px; }
@@ -55,9 +100,17 @@
         .tariff-category h3 { margin: 0 0 12px 0; font-size: 17px; color: #333; border-bottom: 2px solid #0d6efd; display: inline-block; padding-bottom: 4px; }
         
         .tariff-card { 
-            display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; 
-            border: 2px solid #dee2e6; border-radius: 10px; padding: 16px; margin-bottom: 10px; 
-            cursor: pointer; transition: 0.2s;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #f8f9fa; 
+            border: 2px solid #dee2e6; 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-bottom: 10px; 
+            cursor: pointer; 
+            transition: 0.2s;
+            touch-action: manipulation;
         }
         .tariff-card:active { background: #e9ecef; }
         .tariff-card.selected { border-color: #198754; background: #d1e7dd; box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.2); }
@@ -66,8 +119,16 @@
         .tariff-details { display: flex; gap: 15px; align-items: center; color: #495057; font-size: 14px; text-align: right; }
         .tariff-price { font-size: 18px; font-weight: bold; color: #198754; display: block; }
 
-        /* Адаптивная высота карты */
-        #cdek-map { width: 100%; height: 600px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        #cdek-map { 
+            width: 100%; 
+            height: 600px; 
+            background: #fff; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            /* Исправление для iOS safe area */
+            padding-bottom: env(safe-area-inset-bottom);
+        }
         
         .total-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 16px; }
         .total-row.grand-total { border-top: 2px solid #0d6efd; margin-top: 10px; padding-top: 15px; font-size: 22px; font-weight: bold; color: #198754; }
@@ -78,24 +139,27 @@
         .status.error { color: #842029; background-color: #f8d7da; border: 1px solid #f5c2c7; font-weight: bold; }
         .status.success { color: #0f5132; background-color: #d1e7dd; border: 1px solid #badbcc; font-weight: bold; }
         .status.info { color: #055160; background-color: #cff4fc; border: 1px solid #9eeaf9; }
+        
+        .loader { 
+            display: none; 
+            text-align: center; 
+            padding: 20px; 
+            color: #0d6efd; 
+            font-weight: bold;
+        }
+        .loader.active { display: block; }
 
-        /* ==========================================
-           МОБИЛЬНАЯ АДАПТАЦИЯ (экраны < 768px)
-           ========================================== */
+        /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
             .page { padding: 12px; }
-            .products { grid-template-columns: 1fr; gap: 15px; } /* Одна колонка на телефоне */
-            
+            .products { grid-template-columns: 1fr; gap: 15px; }
             .input-row { flex-direction: column; align-items: stretch; gap: 8px; }
             label { min-width: auto; margin-bottom: 4px; font-size: 15px; }
             input { width: 100%; min-width: auto; }
             .btn-search { width: 100%; margin-top: 5px; }
-            
-            #cdek-map { height: 50vh; min-height: 400px; } /* Карта занимает половину экрана телефона */
-            
+            #cdek-map { height: 55vh; min-height: 400px; }
             .tariff-card { flex-direction: column; align-items: flex-start; gap: 10px; }
             .tariff-details { width: 100%; justify-content: space-between; border-top: 1px solid #dee2e6; padding-top: 10px; margin-top: 5px; }
-            
             .total-row.grand-total { font-size: 20px; }
         }
     </style>
@@ -118,12 +182,12 @@
     <div class="panel">
         <div class="input-row">
             <label for="city-input">Город получателя:</label>
-            <input id="city-input" type="text" value="Чебоксары" placeholder="Введите город" inputmode="text">
+            <input id="city-input" type="text" value="Чебоксары" placeholder="Введите город" inputmode="text" autocomplete="off">
             <button class="btn-search" id="search-button" onclick="searchCity()">Найти</button>
         </div>
         <div class="input-row">
             <label for="address-input">Адрес / ПВЗ:</label>
-            <input id="address-input" type="text" placeholder="Заполнится автоматически при выборе ПВЗ" inputmode="text">
+            <input id="address-input" type="text" placeholder="Заполнится автоматически при выборе ПВЗ" inputmode="text" autocomplete="off">
         </div>
         <div class="status info" id="status">Введите город и нажмите «Найти», затем добавьте товар в корзину.</div>
     </div>
@@ -135,6 +199,7 @@
         </div>
     </div>
 
+    <div class="loader" id="map-loader">⏳ Загрузка карты ПВЗ...</div>
     <div id="cdek-map"></div>
 
     <div class="total-container" id="total-container" style="display: none;">
@@ -172,6 +237,7 @@
     let cdekWidget = null;
     let selectedTariff = null;
     let availableTariffs = [];
+    let widgetReady = false;
 
     function formatPrice(value) {
         return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
@@ -242,6 +308,10 @@
         status.textContent = message;
     }
 
+    function showLoader(show) {
+        document.getElementById('map-loader').classList.toggle('active', show);
+    }
+
     function extractDataFromArgs(args) {
         let pvz = null;
         let tariff = null;
@@ -278,65 +348,108 @@
             try { cdekWidget.destroy(); } catch (e) {}
         }
         container.innerHTML = '';
+        widgetReady = false;
 
         if (!cart.length) {
             container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#777;font-size:16px;padding:20px;text-align:center;">Добавьте товар в корзину, чтобы увидеть карту и тарифы</div>';
             return;
         }
 
-        const config = {
-            from: SENDER_CITY,
-            root: 'cdek-map',
-            apiKey: YANDEX_API_KEY,
-            servicePath: WORKER_URL,
-            defaultLocation: recipientLocation.city,
-            goods: getWidgetGoods(),
-            lang: 'rus', currency: 'RUB', canChoose: true, sender: false,
-            fixBounds: null, popup: false, debug: false, requirePostcode: false,
-            hideDeliveryOptions: { office: false, door: false },
-            forceFilters: { have_cashless: null, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
-            hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
-            tariffs: { office: [234, 136], door: [233, 137] },
+        showLoader(true);
 
-            onCalculate: function(data) {
-                if (!data || !data[0]) {
-                    document.getElementById('tariffs-list').innerHTML = `<div class="status error">Ошибка получения тарифов.</div>`;
-                    return;
+        // Проверка, что виджет загрузился
+        if (!window.CDEKWidget) {
+            showLoader(false);
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#dc3545;font-size:16px;padding:20px;text-align:center;">⚠️ Виджет СДЭК не загрузился. Проверьте интернет-соединение и обновите страницу.</div>';
+            return;
+        }
+
+        try {
+            const config = {
+                from: SENDER_CITY,
+                root: 'cdek-map',
+                apiKey: YANDEX_API_KEY,
+                servicePath: WORKER_URL,
+                defaultLocation: recipientLocation.city,
+                goods: getWidgetGoods(),
+                lang: 'rus', 
+                currency: 'RUB', 
+                canChoose: true, 
+                sender: false,
+                fixBounds: null, 
+                popup: false, 
+                debug: false, 
+                requirePostcode: false,
+                hideDeliveryOptions: { office: false, door: false },
+                forceFilters: { have_cashless: null, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
+                hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
+                tariffs: { office: [234, 136], door: [233, 137] },
+
+                onReady: function() {
+                    widgetReady = true;
+                    showLoader(false);
+                    console.log("Виджет СДЭК готов к работе");
+                },
+
+                onError: function(error) {
+                    showLoader(false);
+                    console.error("Ошибка виджета СДЭК:", error);
+                    setStatus('Ошибка загрузки карты. Попробуйте обновить страницу.', 'error');
+                },
+
+                onCalculate: function(data) {
+                    if (!data || !data[0]) {
+                        document.getElementById('tariffs-list').innerHTML = `<div class="status error">Ошибка получения тарифов.</div>`;
+                        return;
+                    }
+                    renderTariffsFromWidget(data);
+                },
+                
+                onChoose: function(...args) {
+                    const { pvz, tariff } = extractDataFromArgs(args);
+
+                    if (pvz) {
+                        const fullAddress = formatPvzAddress(pvz);
+                        if (fullAddress) {
+                            document.getElementById('address-input').value = fullAddress;
+                            setStatus('ПВЗ выбран. Адрес заполнен.', 'success');
+                        }
+                    }
+
+                    if (tariff && tariff.tariff_code !== undefined) {
+                        const matchedTariff = availableTariffs.find(t => t.tariff_code === tariff.tariff_code);
+                        if (matchedTariff) {
+                            selectedTariff = matchedTariff;
+                            updateTariffSelection();
+                            updateTotal();
+                        } else {
+                            selectedTariff = {
+                                tariff_code: tariff.tariff_code,
+                                tariff_name: tariff.tariff_name || 'Выбранный тариф',
+                                delivery_sum: tariff.delivery_sum
+                            };
+                            document.querySelectorAll('.tariff-card').forEach(card => card.classList.remove('selected'));
+                            updateTotal();
+                        }
+                    }
                 }
-                renderTariffsFromWidget(data);
-            },
+            };
+
+            cdekWidget = new window.CDEKWidget(config);
             
-            onChoose: function(...args) {
-                const { pvz, tariff } = extractDataFromArgs(args);
-
-                if (pvz) {
-                    const fullAddress = formatPvzAddress(pvz);
-                    if (fullAddress) {
-                        document.getElementById('address-input').value = fullAddress;
-                        setStatus('ПВЗ выбран. Адрес заполнен.', 'success');
-                    }
+            // Таймаут: если виджет не загрузился за 15 секунд, показать ошибку
+            setTimeout(() => {
+                if (!widgetReady) {
+                    showLoader(false);
+                    console.warn("Виджет не ответил за 15 секунд");
                 }
-
-                if (tariff && tariff.tariff_code !== undefined) {
-                    const matchedTariff = availableTariffs.find(t => t.tariff_code === tariff.tariff_code);
-                    if (matchedTariff) {
-                        selectedTariff = matchedTariff;
-                        updateTariffSelection();
-                        updateTotal();
-                    } else {
-                        selectedTariff = {
-                            tariff_code: tariff.tariff_code,
-                            tariff_name: tariff.tariff_name || 'Выбранный тариф',
-                            delivery_sum: tariff.delivery_sum
-                        };
-                        document.querySelectorAll('.tariff-card').forEach(card => card.classList.remove('selected'));
-                        updateTotal();
-                    }
-                }
-            }
-        };
-
-        cdekWidget = new window.CDEKWidget(config);
+            }, 15000);
+            
+        } catch (error) {
+            showLoader(false);
+            console.error("Критическая ошибка инициализации виджета:", error);
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#dc3545;font-size:16px;padding:20px;text-align:center;">⚠️ Не удалось инициализировать виджет. Обновите страницу.</div>';
+        }
     }
 
     function renderTariffsFromWidget(tariffsData) {
@@ -345,7 +458,11 @@
         availableTariffs = [];
 
         const data = tariffsData[0];
-        const categories = [ { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' }, { key: 'door', title: '🚪 До двери' }, { key: 'pickup', title: '📦 До постамата' } ];
+        const categories = [ 
+            { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' }, 
+            { key: 'door', title: '🚪 До двери' }, 
+            { key: 'pickup', title: '📦 До постамата' } 
+        ];
         let hasAny = false;
 
         categories.forEach(cat => {
@@ -450,6 +567,9 @@
         }
     }
 
+    // =====================================================================
+    // ЯНДЕКС ГЕОКОДЕР: теперь через HTTP API (без подключения тяжелого скрипта)
+    // =====================================================================
     async function searchCity() {
         const input = document.getElementById('city-input');
         const button = document.getElementById('search-button');
@@ -458,48 +578,143 @@
 
         button.disabled = true; button.textContent = 'Поиск...';
         try {
-            const result = await geocodeCity(query);
+            const result = await geocodeCityHttp(query);
             recipientLocation = result;
             input.value = result.city;
             setStatus(`Город: ${result.city}`, 'success');
             initCdekWidget();
         } catch (error) {
+            console.error(error);
             setStatus('Не удалось найти город.', 'error');
         } finally {
             button.disabled = false; button.textContent = 'Найти';
         }
     }
 
-    function geocodeCity(query) {
-        return new Promise((resolve, reject) => {
-            ymaps.ready(async () => {
-                try {
-                    const result = await ymaps.geocode(query, { kind: 'locality', results: 10 });
-                    const geoObjects = result.geoObjects.toArray();
-                    if (!geoObjects.length) { reject(new Error('Город не найден')); return; }
+    // Легкий HTTP-геокодер (не требует загрузки скрипта Яндекс Карт)
+    async function geocodeCityHttp(query) {
+        const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_API_KEY}&geocode=${encodeURIComponent(query)}&format=json&kind=locality&results=5`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Геокодер недоступен');
+        
+        const data = await response.json();
+        const members = data.response?.GeoObjectCollection?.featureMember || [];
+        
+        if (!members.length) throw new Error('Город не найден');
 
-                    let selected = null;
-                    for (const geoObject of geoObjects) {
-                        const meta = geoObject.properties.get('metaDataProperty.GeocoderMetaData');
-                        const components = meta?.Address?.Components || [];
-                        const locality = components.find(c => c.kind === 'locality');
-                        if (locality && locality.name && locality.name.toLowerCase() !== 'россия') {
-                            const coords = geoObject.geometry.getCoordinates();
-                            selected = { city: locality.name, lat: coords[0], lon: coords[1] };
-                            break;
-                        }
-                    }
-                    if (!selected) {
-                        const first = geoObjects[0];
-                        const name = first.properties.get('name');
-                        if (!name || name.toLowerCase() === 'россия') { reject(new Error('Не удалось определить город')); return; }
-                        const coords = first.geometry.getCoordinates();
-                        selected = { city: name, lat: coords[0], lon: coords[1] };
-                    }
-                    resolve(selected);
-                } catch (error) { reject(error); }
+        for (const member of members) {
+            const geoObject = member.GeoObject;
+            const meta = geoObject?.metaDataProperty?.GeocoderMetaData;
+            const components = meta?.Address?.Components || [];
+            const locality = components.find(c => c.kind === 'locality');
+            
+            if (locality && locality.name && locality.name.toLowerCase() !== 'россия') {
+                const coords = geoObject.Point.pos.split(' ').map(Number);
+                return { 
+                    city: locality.name, 
+                    lat: coords[1], 
+                    lon: coords[0] 
+                };
+            }
+        }
+
+        // Fallback: берем первый результат, если не нашли locality
+        const first = members[0].GeoObject;
+        const name = first.name;
+        if (!name || name.toLowerCase() === 'россия') throw new Error('Не удалось определить город');
+        const coords = first.Point.pos.split(' ').map(Number);
+        return { city: name, lat: coords[1], lon: coords[0] };
+    }
+
+    // =====================================================================
+    // ЯНДЕКС ГЕОСАДЖЕСТ: через HTTP API (без подключения скрипта)
+    // =====================================================================
+    const addressInput = document.getElementById('address-input');
+    let suggestTimeout = null;
+    let suggestContainer = null;
+
+    addressInput.addEventListener('input', (e) => {
+        clearTimeout(suggestTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 3) {
+            hideSuggestions();
+            return;
+        }
+
+        suggestTimeout = setTimeout(() => fetchSuggestions(query), 300);
+    });
+
+    addressInput.addEventListener('blur', () => {
+        // Даем время кликнуть на подсказку
+        setTimeout(hideSuggestions, 200);
+    });
+
+    async function fetchSuggestions(query) {
+        try {
+            const city = document.getElementById('city-input').value.trim();
+            const fullQuery = city ? `${city}, ${query}` : query;
+            const url = `https://suggest-maps.yandex.ru/v1/suggest?apikey=${YANDEX_API_KEY}&text=${encodeURIComponent(fullQuery)}&results=5&types=geo`;
+            
+            const response = await fetch(url);
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            const results = data.results || [];
+            
+            if (results.length === 0) {
+                hideSuggestions();
+                return;
+            }
+
+            showSuggestions(results);
+        } catch (error) {
+            console.warn('Геосаджест недоступен:', error);
+        }
+    }
+
+    function showSuggestions(results) {
+        hideSuggestions();
+        
+        suggestContainer = document.createElement('div');
+        suggestContainer.style.cssText = `
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: ${addressInput.offsetWidth}px;
+        `;
+
+        results.forEach(item => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;';
+            div.textContent = item.title || item.subtitle || '';
+            div.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                addressInput.value = item.title || '';
+                hideSuggestions();
             });
+            div.addEventListener('mouseover', () => div.style.background = '#f0f0f0');
+            div.addEventListener('mouseout', () => div.style.background = 'white');
+            suggestContainer.appendChild(div);
         });
+
+        const rect = addressInput.getBoundingClientRect();
+        suggestContainer.style.top = (rect.bottom + window.scrollY) + 'px';
+        suggestContainer.style.left = rect.left + 'px';
+        document.body.appendChild(suggestContainer);
+    }
+
+    function hideSuggestions() {
+        if (suggestContainer) {
+            suggestContainer.remove();
+            suggestContainer = null;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -509,14 +724,6 @@
         
         document.getElementById('city-input').addEventListener('keydown', (e) => { 
             if (e.key === 'Enter') searchCity(); 
-        });
-
-        ymaps.ready(() => {
-            try {
-                ymaps.suggest(document.getElementById('address-input'));
-            } catch (e) {
-                console.warn("Геосаджест не инициализирован", e);
-            }
         });
     });
 </script>
