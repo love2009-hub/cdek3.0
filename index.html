@@ -32,19 +32,6 @@
         .btn-clear:hover { background: #bb2d3b; }
         .btn-checkout { width: 100%; background: #fd7e14; color: #fff; font-size: 18px; padding: 16px; margin-top: 20px; }
         .btn-checkout:hover { background: #e8590c; }
-        
-        /* НОВАЯ КНОПКА: ДОБАВИТЬ АДРЕС */
-        .btn-add-address { 
-            width: 100%; 
-            background: #6f42c1; 
-            color: #fff; 
-            font-size: 16px; 
-            padding: 14px; 
-            margin-top: 15px;
-            display: none;
-        }
-        .btn-add-address:hover { background: #5a32a3; }
-        .btn-add-address.visible { display: block; }
 
         .panel { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
@@ -141,9 +128,6 @@
         </div>
     </div>
 
-    <!-- НОВАЯ КНОПКА: ДОБАВИТЬ АДРЕС -->
-    <button class="btn-add-address" id="btn-add-address" onclick="addAddressFromTariff()">Добавить адрес</button>
-
     <button class="btn-checkout" onclick="checkout()">Оформить заказ</button>
 </div>
 
@@ -163,9 +147,6 @@
     let cdekWidget = null;
     let selectedTariff = null;
     let availableTariffs = [];
-    
-    // НОВАЯ ПЕРЕМЕННАЯ: хранит данные о выбранном тарифе и ПВЗ для кнопки "Добавить адрес"
-    let pendingTariffData = null;
 
     function formatPrice(value) {
         return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
@@ -194,11 +175,9 @@
         cart = [];
         selectedTariff = null;
         availableTariffs = [];
-        pendingTariffData = null;
         renderCart();
         document.getElementById('tariffs-list').innerHTML = '<div class="cart-empty">Добавьте товар в корзину, чтобы рассчитать стоимость доставки.</div>';
         document.getElementById('total-container').style.display = 'none';
-        document.getElementById('btn-add-address').classList.remove('visible');
         initCdekWidget();
         setStatus('Корзина очищена.', 'info');
     }
@@ -238,107 +217,6 @@
         status.textContent = message;
     }
 
-    function extractPvzAndTariff(data) {
-        let pvz = null;
-        let tariff = null;
-
-        console.log("=== CDEK onChoose RAW DATA ===", data);
-
-        if (Array.isArray(data)) {
-            data.forEach(item => {
-                if (!item || typeof item !== 'object') return;
-                if (item.delivery_sum !== undefined && item.tariff_code !== undefined) {
-                    tariff = item;
-                    console.log("Найден тариф в массиве:", tariff);
-                }
-                if (item.city || item.address || item.address_full) {
-                    pvz = item;
-                    console.log("Найден ПВЗ в массиве:", pvz);
-                }
-            });
-        } else if (data && typeof data === 'object') {
-            if (data.city || data.address || data.address_full) {
-                pvz = data;
-                console.log("ПВЗ в корневом объекте:", pvz);
-            }
-            if (data.delivery_sum !== undefined && data.tariff_code !== undefined) {
-                tariff = data;
-                console.log("Тариф в корневом объекте:", tariff);
-            }
-            if (data.location && (data.location.city || data.location.address)) {
-                pvz = data.location;
-                console.log("ПВЗ в location:", pvz);
-            }
-            if (data.tariff && data.tariff.delivery_sum !== undefined) {
-                tariff = data.tariff;
-                console.log("Тариф в tariff:", tariff);
-            }
-        }
-
-        return { pvz, tariff };
-    }
-
-    function formatPvzAddress(pvz) {
-        if (!pvz) return '';
-
-        const city = pvz.city || (pvz.location && pvz.location.city) || '';
-        const address = pvz.address || pvz.address_full || (pvz.location && pvz.location.address) || pvz.name || '';
-
-        if (!city && !address) return '';
-
-        if (city && address) {
-            const cityLower = city.toLowerCase();
-            if (address.toLowerCase().includes(cityLower) || 
-                address.toLowerCase().includes(cityLower.replace('ё', 'е'))) {
-                return address;
-            }
-            return `${city}, ${address}`;
-        }
-
-        return address || city;
-    }
-
-    // НОВАЯ ФУНКЦИЯ: обработчик клика на кнопку "Добавить адрес"
-    function addAddressFromTariff() {
-        if (!pendingTariffData) {
-            setStatus('Нет данных для добавления адреса.', 'error');
-            return;
-        }
-
-        const { pvz, tariff } = pendingTariffData;
-
-        // 1. Заполняем адрес
-        if (pvz) {
-            const fullAddress = formatPvzAddress(pvz);
-            if (fullAddress) {
-                document.getElementById('address-input').value = fullAddress;
-                setStatus('Адрес добавлен: ' + fullAddress, 'success');
-            }
-        }
-
-        // 2. Обновляем тариф и итоговую стоимость
-        if (tariff && tariff.tariff_code !== undefined) {
-            const matchedTariff = availableTariffs.find(t => t.tariff_code === tariff.tariff_code);
-            
-            if (matchedTariff) {
-                selectedTariff = matchedTariff;
-                updateTariffSelection();
-                updateTotal();
-            } else {
-                selectedTariff = {
-                    tariff_code: tariff.tariff_code,
-                    tariff_name: tariff.tariff_name || 'Выбранный тариф',
-                    delivery_sum: tariff.delivery_sum
-                };
-                updateTotal();
-            }
-        }
-
-        // Скрываем кнопку после использования
-        document.getElementById('btn-add-address').classList.remove('visible');
-        pendingTariffData = null;
-    }
-
     function initCdekWidget() {
         const container = document.getElementById('cdek-map');
         if (cdekWidget && typeof cdekWidget.destroy === 'function') {
@@ -374,49 +252,53 @@
                 renderTariffsFromWidget(data);
             },
             
+            // =====================================================================
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ onChoose (работает точно с вашим примером данных)
+            // =====================================================================
             onChoose: function(data) {
-                const { pvz, tariff } = extractPvzAndTariff(data);
+                console.log("CDEK onChoose raw data:", data);
 
-                // Если есть и ПВЗ, и тариф — заполняем адрес сразу (старая логика)
-                if (pvz && tariff) {
-                    const fullAddress = formatPvzAddress(pvz);
-                    if (fullAddress) {
-                        document.getElementById('address-input').value = fullAddress;
-                        setStatus('ПВЗ выбран. Адрес: ' + fullAddress, 'success');
-                    }
+                // Виджет передает массив: [0: тип, 1: тариф, 2: данные ПВЗ]
+                if (!Array.isArray(data) || data.length < 3) {
+                    console.warn("Неожиданный формат данных от виджета");
+                    return;
+                }
 
-                    if (tariff.tariff_code !== undefined) {
-                        const matchedTariff = availableTariffs.find(t => t.tariff_code === tariff.tariff_code);
-                        if (matchedTariff) {
-                            selectedTariff = matchedTariff;
-                            updateTariffSelection();
-                            updateTotal();
-                        } else {
-                            selectedTariff = {
-                                tariff_code: tariff.tariff_code,
-                                tariff_name: tariff.tariff_name || 'Выбранный тариф',
-                                delivery_sum: tariff.delivery_sum
-                            };
-                            updateTotal();
-                        }
-                    }
+                const tariffInfo = data[1]; // Информация о тарифе (содержит delivery_sum)
+                const pvzInfo = data[2];    // Информация о ПВЗ (содержит city и address)
+
+                // 1. ЗАПОЛНЕНИЕ ПОЛЯ АДРЕСА
+                if (pvzInfo) {
+                    const city = pvzInfo.city || '';
+                    const address = pvzInfo.address || pvzInfo.name || '';
                     
-                    // Скрываем кнопку, если она была показана
-                    document.getElementById('btn-add-address').classList.remove('visible');
-                    pendingTariffData = null;
-                }
-                // Если есть только тариф (без ПВЗ) — показываем кнопку "Добавить адрес"
-                else if (tariff && !pvz) {
-                    pendingTariffData = { pvz: null, tariff };
-                    document.getElementById('btn-add-address').classList.add('visible');
-                    setStatus('Тариф выбран. Нажмите кнопку "Добавить адрес" для применения.', 'info');
-                }
-                // Если есть только ПВЗ (без тарифа) — заполняем адрес
-                else if (pvz && !tariff) {
-                    const fullAddress = formatPvzAddress(pvz);
+                    let fullAddress = '';
+                    if (city && address) {
+                        // Проверка, чтобы не дублировать город, если он уже есть в address
+                        if (address.toLowerCase().includes(city.toLowerCase())) {
+                            fullAddress = address;
+                        } else {
+                            fullAddress = `${city}, ${address}`;
+                        }
+                    } else {
+                        fullAddress = address || city || '';
+                    }
+
                     if (fullAddress) {
                         document.getElementById('address-input').value = fullAddress;
-                        setStatus('ПВЗ выбран. Адрес: ' + fullAddress, 'success');
+                        setStatus('ПВЗ выбран. Адрес заполнен: ' + fullAddress, 'success');
+                    }
+                }
+
+                // 2. ОБНОВЛЕНИЕ СТОИМОСТИ ДОСТАВКИ В ИТОГАХ
+                if (tariffInfo && tariffInfo.tariff_code) {
+                    // Ищем этот тариф в нашем списке доступных тарифов
+                    const matchedTariff = availableTariffs.find(t => t.tariff_code === tariffInfo.tariff_code);
+                    
+                    if (matchedTariff) {
+                        selectedTariff = matchedTariff;
+                        updateTariffSelection(); // Подсвечиваем карточку тарифа зеленым
+                        updateTotal(); // Пересчитываем итоговую сумму (товары + delivery_sum из тарифа)
                     }
                 }
             }
