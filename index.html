@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды с доставкой СДЭК</title>
-    <!-- Подключение виджета СДЭК версии 4 -->
+    <!-- Подключение виджета СДЭК -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
@@ -36,11 +36,17 @@
 
         #cdek-map { width: 100%; height: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; }
         .hint { display: flex; align-items: center; justify-content: center; height: 100%; color: #777; font-size: 16px; text-align: center; padding: 20px; }
+        
+        .debug-info { background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; color: #856404; }
     </style>
 </head>
 <body>
 
     <h2>Магазин одежды</h2>
+    
+    <div class="debug-info" id="debug-info">
+        Отправитель: Чебоксары (координаты загружаются...)
+    </div>
     
     <div class="cart-status" id="cart-status">Корзина пуста. Выберите товар для расчета доставки из Чебоксар.</div>
 
@@ -82,7 +88,6 @@
     <script>
         // =====================================================================
         // ГАБАРИТЫ ТОВАРОВ (Скрыты в коде, не отображаются на сайте)
-        // Формат строго как запрошено: width, height, length, weight
         // =====================================================================
         const productsData = [
             {
@@ -110,6 +115,36 @@
 
         let currentGoods = null; 
         let cdekWidget = null;
+        let senderCoordinates = null; // Координаты Чебоксар
+
+        // =====================================================================
+        // ПОЛУЧЕНИЕ КООРДИНАТ ЧЕБОКСАР ЧЕРЕЗ ЯНДЕКС ГЕОКОДЕР
+        // =====================================================================
+        async function getCheboksaryCoordinates() {
+            const geocoderUrl = `https://geocode-maps.yandex.ru/1.x/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&geocode=Чебоксары&format=json`;
+            
+            try {
+                const response = await fetch(geocoderUrl);
+                const data = await response.json();
+                
+                const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
+                if (geoObject) {
+                    const coordinates = geoObject.Point.pos.split(' ');
+                    senderCoordinates = {
+                        longitude: parseFloat(coordinates[0]),
+                        latitude: parseFloat(coordinates[1])
+                    };
+                    console.log('Чебоксары координаты:', senderCoordinates);
+                    document.getElementById('debug-info').innerText = 
+                        `Отправитель: Чебоксары (координаты: ${senderCoordinates.latitude.toFixed(4)}, ${senderCoordinates.longitude.toFixed(4)})`;
+                    return senderCoordinates;
+                }
+            } catch (error) {
+                console.error('Ошибка получения координат Чебоксар:', error);
+            }
+            
+            return null;
+        }
 
         // =====================================================================
         // ЛОГИКА КОРЗИНЫ И ВИДЖЕТА
@@ -119,12 +154,13 @@
             currentGoods = productsData[index];
             
             document.getElementById('cart-status').innerText = `В корзине: ${currentGoods.name} (доставка из Чебоксар)`;
+            console.log('Товар добавлен в корзину:', currentGoods);
             
             const destinationCity = document.getElementById('city-input').value.trim() || 'Чебоксары';
             initWidget(destinationCity, currentGoods);
         }
 
-        function initWidget(destinationCity, goods) {
+        async function initWidget(destinationCity, goods) {
             const container = document.getElementById('cdek-map');
             container.innerHTML = ''; 
 
@@ -133,33 +169,51 @@
                 return;
             }
 
-            // Инициализация виджета СДЭК с явными координатами Чебоксар
-            cdekWidget = new window.CDEKWidget({
-                // Город отправителя жестко зафиксирован как Чебоксары с кодом СДЭК
-                from: {
-                    city: 'Чебоксары',
-                    code: '137' // Официальный код города Чебоксары в системе СДЭК
-                },
+            // Если координаты еще не получены, получаем их
+            if (!senderCoordinates) {
+                await getCheboksaryCoordinates();
+            }
+
+            console.log('Инициализация виджета с параметрами:', {
+                from: 'Чебоксары',
+                fromCoordinates: senderCoordinates,
+                to: destinationCity,
+                goods: goods
+            });
+
+            // Конфигурация виджета с координатами отправителя
+            const widgetConfig = {
+                from: 'Чебоксары',
                 root: 'cdek-map',
-                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', // Ваш Yandex API Key
-                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', // Ваш Cloudflare Worker
-                // Начальная позиция карты - координаты Чебоксар
-                defaultLocation: {
-                    latitude: 56.1290,
-                    longitude: 47.2538
-                },
-                // Передаем точные габариты товара для расчета тарифов
+                apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', 
+                servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', 
+                defaultLocation: destinationCity,
                 goods: [goods],
                 onChoose: function(pvz) {
-                    // Автоматическое заполнение адреса при выборе ПВЗ
                     const fullAddress = pvz.address ? `${pvz.city}, ${pvz.address}` : (pvz.name || '');
                     document.getElementById('address-input').value = fullAddress;
+                    console.log('Выбран ПВЗ:', pvz);
                 }
-            });
+            };
+
+            // Добавляем координаты отправителя, если они получены
+            if (senderCoordinates) {
+                widgetConfig.fromCode = 'Чебоксары';
+                // Передаем координаты через дополнительные параметры
+                widgetConfig.senderAddress = {
+                    city: 'Чебоксары',
+                    latitude: senderCoordinates.latitude,
+                    longitude: senderCoordinates.longitude
+                };
+            }
+
+            console.log('Конфигурация виджета:', widgetConfig);
+
+            cdekWidget = new window.CDEKWidget(widgetConfig);
         }
 
         // =====================================================================
-        // ЛОГИКА ПОИСКА ГОРОДА (Яндекс Геокодер)
+        // ЛОГИКА ПОИСКА ГОРОДА ПОЛУЧАТЕЛЯ
         // =====================================================================
         async function searchCity() {
             const cityInput = document.getElementById('city-input').value.trim();
@@ -180,22 +234,28 @@
                 const data = await response.json();
                 
                 let correctCityName = cityInput;
+                let cityCoordinates = null;
                 
                 const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
                 if (geoObject) {
-                    // Ищем компонент типа "locality" (город/населенный пункт)
+                    // Получаем координаты города получателя
+                    const coordinates = geoObject.Point.pos.split(' ');
+                    cityCoordinates = {
+                        longitude: parseFloat(coordinates[0]),
+                        latitude: parseFloat(coordinates[1])
+                    };
+                    
+                    // Ищем название города
                     const components = geoObject.metaDataProperty.GeocoderMetaData.Address.Components;
                     const cityComponent = components.find(c => c.kind === 'locality');
                     
                     if (cityComponent) {
                         correctCityName = cityComponent.name;
                     } else {
-                        // Если locality не найден, берем первое значение после страны
                         const formatted = geoObject.metaDataProperty.GeocoderMetaData.Address.formatted;
                         const parts = formatted.split(',');
                         correctCityName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                         
-                        // Защита от слова "Россия"
                         if (correctCityName.toLowerCase() === 'россия') {
                             correctCityName = parts.length > 2 ? parts[2].trim() : cityInput;
                         }
@@ -203,6 +263,7 @@
                 }
 
                 document.getElementById('city-input').value = correctCityName;
+                console.log('Город получателя:', correctCityName, 'координаты:', cityCoordinates);
                 
                 if (currentGoods) {
                     initWidget(correctCityName, currentGoods);
@@ -224,7 +285,9 @@
         // =====================================================================
         // ПЕРВИЧНАЯ ИНИЦИАЛИЗАЦИЯ
         // =====================================================================
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Получаем координаты Чебоксар при загрузке страницы
+            await getCheboksaryCoordinates();
             initWidget('Чебоксары', null);
         });
     </script>
