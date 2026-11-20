@@ -126,7 +126,7 @@
         <div class="total-row grand-total">
             <span>Итого к оплате:</span>
             <span class="value" id="total-grand">0 ₽</span>
-        </div
+        </div>
     </div>
 
     <button class="btn-checkout" onclick="checkout()">Оформить заказ</button>
@@ -253,23 +253,42 @@
                 renderTariffsFromWidget(data);
             },
             
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАПОЛНЕНИЯ АДРЕСА
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАПОЛНЕНИЯ АДРЕСА (теперь точно в формате "Город, Улица, Дом")
             onChoose: function(data) {
                 console.log("CDEK onChoose raw data:", data);
                 
                 // Виджет может передать объект или массив с объектом. Приводим к объекту.
-                const pvz = Array.isArray(data) ? data[0] : data;
-                if (!pvz) return;
+                const point = Array.isArray(data) ? data[0] : data;
+                if (!point) return;
 
-                // Максимально надежное извлечение города и адреса из всех возможных полей виджета
-                const city = pvz.city || (pvz.location && pvz.location.city) || recipientLocation.city || '';
-                const address = pvz.address || pvz.address_full || (pvz.location && pvz.location.address) || pvz.name || '';
+                // Извлекаем город и улицу из наиболее надежных полей
+                const city = point.city || (point.location && point.location.city) || recipientLocation.city || '';
+                const street = point.address || point.address_full || (point.location && point.location.address) || '';
+                const name = point.name || '';
 
-                const fullAddress = (city && address) ? `${city}, ${address}` : (address || city || '');
+                let fullAddress = '';
+
+                if (street) {
+                    // Если в street уже есть название города (например, "г. Чебоксары, ул..."), не дублируем его
+                    const cityShort = city.split(' ')[0].toLowerCase(); // берем первое слово (например, "чебоксары")
+                    if (city && !street.toLowerCase().includes(cityShort)) {
+                        fullAddress = `${city}, ${street}`;
+                    } else {
+                        fullAddress = street;
+                    }
+                } else if (name) {
+                    // Если street пуст, но есть name (там часто написан полный адрес), используем его
+                    fullAddress = name;
+                } else if (city) {
+                    fullAddress = city;
+                }
+
+                // Очистка от лишних запятых и пробелов в начале/конце
+                fullAddress = fullAddress.replace(/^,\s*|,\s*$/g, '').replace(/\s+/g, ' ').trim();
 
                 if (fullAddress) {
                     document.getElementById('address-input').value = fullAddress;
-                    setStatus('ПВЗ выбран. Адрес заполнен автоматически (можно редактировать).', 'success');
+                    setStatus('ПВЗ выбран. Адрес заполнен: ' + fullAddress, 'success');
                 }
             }
         };
