@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин одежды — доставка СДЭК</title>
     
+    <!-- Исправление ошибки favicon.ico 404 -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&lang=ru_RU" type="text/javascript"></script>
     
@@ -28,16 +31,7 @@
         .btn-search:hover { background: #0b5ed7; }
         .btn-clear { background: #dc3545; color: #fff; width: 100%; margin-top: 15px; }
         .btn-clear:hover { background: #bb2d3b; }
-        
-        /* НОВАЯ КНОПКА ОФОРМЛЕНИЯ ЗАКАЗА */
-        .btn-checkout { 
-            width: 100%; 
-            background: #fd7e14; 
-            color: #fff; 
-            font-size: 18px; 
-            padding: 16px; 
-            margin-top: 20px;
-        }
+        .btn-checkout { width: 100%; background: #fd7e14; color: #fff; font-size: 18px; padding: 16px; margin-top: 20px; }
         .btn-checkout:hover { background: #e8590c; }
 
         .panel { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -56,29 +50,13 @@
         .tariff-category { margin-bottom: 25px; }
         .tariff-category h3 { margin: 0 0 12px 0; font-size: 17px; color: #333; border-bottom: 2px solid #0d6efd; display: inline-block; padding-bottom: 4px; }
         
-        /* Карточки тарифов теперь кликабельные */
         .tariff-card { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: #f8f9fa; 
-            border: 2px solid #dee2e6; 
-            border-radius: 8px; 
-            padding: 14px 18px; 
-            margin-bottom: 10px; 
-            cursor: pointer;
-            transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; 
+            border: 2px solid #dee2e6; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; 
+            cursor: pointer; transition: 0.2s;
         }
-        .tariff-card:hover { 
-            border-color: #0d6efd; 
-            background: #e7f1ff;
-        }
-        /* Выбранный тариф подсвечивается */
-        .tariff-card.selected { 
-            border-color: #198754; 
-            background: #d1e7dd;
-            box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.2);
-        }
+        .tariff-card:hover { border-color: #0d6efd; background: #e7f1ff; }
+        .tariff-card.selected { border-color: #198754; background: #d1e7dd; box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.2); }
         
         .tariff-name { font-weight: bold; color: #212529; flex: 1; }
         .tariff-details { display: flex; gap: 25px; align-items: center; color: #495057; font-size: 14px; }
@@ -86,28 +64,9 @@
 
         #cdek-map { width: 100%; height: 600px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         
-        /* НОВЫЙ БЛОК ИТОГОВОЙ СТОИМОСТИ */
-        .total-container {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 16px;
-        }
-        .total-row.grand-total {
-            border-top: 2px solid #0d6efd;
-            margin-top: 10px;
-            padding-top: 15px;
-            font-size: 22px;
-            font-weight: bold;
-            color: #198754;
-        }
+        .total-container { background: #fff; border-radius: 12px; padding: 20px; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 16px; }
+        .total-row.grand-total { border-top: 2px solid #0d6efd; margin-top: 10px; padding-top: 15px; font-size: 22px; font-weight: bold; color: #198754; }
         .total-row .value { font-weight: bold; }
         .total-row.no-delivery .value { color: #dc3545; font-style: italic; font-weight: normal; font-size: 14px; }
 
@@ -154,7 +113,6 @@
 
     <div id="cdek-map"></div>
 
-    <!-- НОВЫЙ БЛОК: ИТОГОВАЯ СТОИМОСТЬ -->
     <div class="total-container" id="total-container" style="display: none;">
         <h2 style="margin-top: 0;">Итоговая стоимость</h2>
         <div class="total-row">
@@ -168,10 +126,9 @@
         <div class="total-row grand-total">
             <span>Итого к оплате:</span>
             <span class="value" id="total-grand">0 ₽</span>
-        </div>
+        </div
     </div>
 
-    <!-- НОВАЯ КНОПКА: ОФОРМИТЬ ЗАКАЗ -->
     <button class="btn-checkout" onclick="checkout()">Оформить заказ</button>
 </div>
 
@@ -181,33 +138,16 @@
     const SENDER_CITY = 'Чебоксары';
 
     const PRODUCTS = [
-        {
-            id: 'jacket',
-            name: 'Зимняя куртка',
-            price: 12500,
-            dimensions: { "width": 40, "height": 60, "length": 15, "weight": 1500 }
-        },
-        {
-            id: 'jeans',
-            name: 'Джинсы классические',
-            price: 4500,
-            dimensions: { "width": 30, "height": 40, "length": 10, "weight": 800 }
-        },
-        {
-            id: 'tshirt',
-            name: 'Хлопковая футболка',
-            price: 1500,
-            dimensions: { "width": 25, "height": 30, "length": 4, "weight": 300 }
-        }
+        { id: 'jacket', name: 'Зимняя куртка', price: 12500, dimensions: { "width": 40, "height": 60, "length": 15, "weight": 1500 } },
+        { id: 'jeans', name: 'Джинсы классические', price: 4500, dimensions: { "width": 30, "height": 40, "length": 10, "weight": 800 } },
+        { id: 'tshirt', name: 'Хлопковая футболка', price: 1500, dimensions: { "width": 25, "height": 30, "length": 4, "weight": 300 } }
     ];
 
     let cart = [];
     let recipientLocation = { city: 'Чебоксары', lat: null, lon: null };
     let cdekWidget = null;
-    
-    // НОВЫЕ ПЕРЕМЕННЫЕ
-    let selectedTariff = null;       // Выбранный пользователем тариф
-    let availableTariffs = [];       // Плоский список всех доступных тарифов (для поиска по коду)
+    let selectedTariff = null;
+    let availableTariffs = [];
 
     function formatPrice(value) {
         return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
@@ -226,7 +166,6 @@
     function addToCart(productId) {
         const product = PRODUCTS.find(item => item.id === productId);
         if (!product) return;
-
         cart.push(product);
         renderCart();
         setStatus(`Товар «${product.name}» добавлен. Расчет доставки из Чебоксар обновлен.`, 'success');
@@ -247,14 +186,12 @@
     function renderCart() {
         const list = document.getElementById('cart-list');
         const total = document.getElementById('cart-total');
-
         if (!cart.length) {
             list.className = 'cart-empty';
             list.innerHTML = 'Корзина пуста. Добавьте товар для расчета доставки.';
             total.innerHTML = '';
             return;
         }
-
         list.className = '';
         list.innerHTML = cart.map((item, index) => `
             <div class="cart-item">
@@ -262,22 +199,16 @@
                 <strong>${formatPrice(item.price)}</strong>
             </div>
         `).join('');
-
         const sum = cart.reduce((acc, item) => acc + item.price, 0);
         total.innerHTML = 'Итого: ' + formatPrice(sum);
-        
         updateTotal();
     }
 
     function getWidgetGoods() {
         return cart.map(item => ({
-            name: item.name,
-            ware_key: item.id,
-            amount: 1,
-            weight: item.dimensions.weight,
-            length: item.dimensions.length,
-            width: item.dimensions.width,
-            height: item.dimensions.height
+            name: item.name, ware_key: item.id, amount: 1,
+            weight: item.dimensions.weight, length: item.dimensions.length,
+            width: item.dimensions.width, height: item.dimensions.height
         }));
     }
 
@@ -289,7 +220,6 @@
 
     function initCdekWidget() {
         const container = document.getElementById('cdek-map');
-        
         if (cdekWidget && typeof cdekWidget.destroy === 'function') {
             try { cdekWidget.destroy(); } catch (e) {}
         }
@@ -307,16 +237,8 @@
             servicePath: WORKER_URL,
             defaultLocation: recipientLocation.city,
             goods: getWidgetGoods(),
-            
-            lang: 'rus',
-            currency: 'RUB',
-            canChoose: true,
-            sender: false,
-            fixBounds: null,
-            popup: false,
-            debug: false,
-            requirePostcode: false,
-            
+            lang: 'rus', currency: 'RUB', canChoose: true, sender: false,
+            fixBounds: null, popup: false, debug: false, requirePostcode: false,
             hideDeliveryOptions: { office: false, door: false },
             forceFilters: { have_cashless: null, have_cash: null, is_dressing_room: null, allowed_cod: null, type: null },
             hideFilters: { have_cashless: false, have_cash: false, is_dressing_room: false, type: false },
@@ -324,26 +246,31 @@
 
             onCalculate: function(data) {
                 console.log("CDEK onCalculate raw data:", data);
-                
                 if (!data || !data[0]) {
-                    document.getElementById('tariffs-list').innerHTML = 
-                        `<div class="status error">Ошибка получения тарифов. Откройте консоль (F12), чтобы увидеть детали.</div>`;
+                    document.getElementById('tariffs-list').innerHTML = `<div class="status error">Ошибка получения тарифов. Проверьте консоль (F12).</div>`;
                     return;
                 }
-
                 renderTariffsFromWidget(data);
             },
             
-            onChoose: function(pvz) {
-                // АВТОЗАПОЛНЕНИЕ АДРЕСА ПРИ ВЫБОРЕ ПВЗ
-                const location = pvz.location || {};
-                const city = location.city || pvz.city || recipientLocation.city;
-                const address = location.address_full || location.address || pvz.address || pvz.name || '';
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАПОЛНЕНИЯ АДРЕСА
+            onChoose: function(data) {
+                console.log("CDEK onChoose raw data:", data);
                 
-                const fullAddress = city && address ? `${city}, ${address}` : address;
-                document.getElementById('address-input').value = fullAddress;
-                
-                setStatus('ПВЗ выбран. Адрес заполнен автоматически (можно редактировать).', 'success');
+                // Виджет может передать объект или массив с объектом. Приводим к объекту.
+                const pvz = Array.isArray(data) ? data[0] : data;
+                if (!pvz) return;
+
+                // Максимально надежное извлечение города и адреса из всех возможных полей виджета
+                const city = pvz.city || (pvz.location && pvz.location.city) || recipientLocation.city || '';
+                const address = pvz.address || pvz.address_full || (pvz.location && pvz.location.address) || pvz.name || '';
+
+                const fullAddress = (city && address) ? `${city}, ${address}` : (address || city || '');
+
+                if (fullAddress) {
+                    document.getElementById('address-input').value = fullAddress;
+                    setStatus('ПВЗ выбран. Адрес заполнен автоматически (можно редактировать).', 'success');
+                }
             }
         };
 
@@ -353,14 +280,10 @@
     function renderTariffsFromWidget(tariffsData) {
         const container = document.getElementById('tariffs-list');
         container.innerHTML = '';
-        availableTariffs = []; // Сбрасываем плоский список
+        availableTariffs = [];
 
         const data = tariffsData[0];
-        const categories = [
-            { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' },
-            { key: 'door', title: '🚪 До двери' }
-        ];
-
+        const categories = [ { key: 'office', title: '📦 До пункта выдачи (ПВЗ)' }, { key: 'door', title: '🚪 До двери' } ];
         let hasAny = false;
 
         categories.forEach(cat => {
@@ -373,9 +296,7 @@
                 const sortedTariffs = data[cat.key].slice().sort((a, b) => (a.delivery_sum || 0) - (b.delivery_sum || 0));
 
                 sortedTariffs.forEach(t => {
-                    // Сохраняем в плоский список для быстрого поиска
                     availableTariffs.push(t);
-                    
                     const price = t.delivery_sum ? formatPrice(t.delivery_sum) : 'По запросу';
                     const days = `${t.period_min}–${t.period_max} дн.`;
                     
@@ -389,7 +310,6 @@
                             <span class="tariff-price">${price}</span>
                         </div>
                     `;
-                    // Обработчик клика по тарифу
                     card.addEventListener('click', () => selectTariff(t.tariff_code));
                     catDiv.appendChild(card);
                 });
@@ -397,15 +317,11 @@
             }
         });
 
-        // Показываем блок итоговой стоимости
         document.getElementById('total-container').style.display = 'block';
         
-        // Если ранее был выбран тариф, который теперь исчез — сбрасываем выбор
         if (selectedTariff && !availableTariffs.find(t => t.tariff_code === selectedTariff.tariff_code)) {
             selectedTariff = null;
         }
-        
-        // Обновляем визуальное выделение
         updateTariffSelection();
         updateTotal();
 
@@ -414,19 +330,15 @@
         }
     }
 
-    // НОВАЯ ФУНКЦИЯ: выбор тарифа по клику
     function selectTariff(tariffCode) {
         const tariff = availableTariffs.find(t => t.tariff_code === tariffCode);
         if (!tariff) return;
-        
         selectedTariff = tariff;
         updateTariffSelection();
         updateTotal();
-        
         setStatus(`Выбран тариф: ${tariff.tariff_name} (${formatPrice(tariff.delivery_sum)})`, 'success');
     }
 
-    // Обновляет визуальное выделение выбранного тарифа
     function updateTariffSelection() {
         document.querySelectorAll('.tariff-card').forEach(card => {
             const code = Number(card.dataset.tariffCode);
@@ -438,15 +350,9 @@
         });
     }
 
-    // НОВАЯ ФУНКЦИЯ: пересчет итоговой стоимости
     function updateTotal() {
         const totalContainer = document.getElementById('total-container');
-        
-        if (!cart.length) {
-            totalContainer.style.display = 'none';
-            return;
-        }
-        
+        if (!cart.length) { totalContainer.style.display = 'none'; return; }
         totalContainer.style.display = 'block';
         
         const goodsSum = cart.reduce((acc, item) => acc + item.price, 0);
@@ -467,48 +373,19 @@
         }
     }
 
-    // НОВАЯ ФУНКЦИЯ: оформление заказа с валидацией
     function checkout() {
         const errors = [];
+        if (!cart.length) errors.push('Корзина пуста — добавьте хотя бы один товар.');
+        if (!document.getElementById('city-input').value.trim()) errors.push('Не указан город получателя.');
+        if (!document.getElementById('address-input').value.trim()) errors.push('Не указан адрес доставки / ПВЗ. Выберите ПВЗ на карте или введите адрес вручную.');
+        if (!selectedTariff) errors.push('Не выбран тариф доставки. Кликните по одному из тарифов в списке.');
         
-        // 1. Проверка корзины
-        if (!cart.length) {
-            errors.push('Корзина пуста — добавьте хотя бы один товар.');
-        }
-        
-        // 2. Проверка города получателя
-        const city = document.getElementById('city-input').value.trim();
-        if (!city) {
-            errors.push('Не указан город получателя.');
-        }
-        
-        // 3. Проверка адреса
-        const address = document.getElementById('address-input').value.trim();
-        if (!address) {
-            errors.push('Не указан адрес доставки / ПВЗ. Выберите ПВЗ на карте или введите адрес вручную.');
-        }
-        
-        // 4. Проверка выбранного тарифа
-        if (!selectedTariff) {
-            errors.push('Не выбран тариф доставки. Кликните по одному из тарифов в списке.');
-        }
-        
-        // Вывод результата
         if (errors.length === 0) {
             setStatus('✅ Все гуд! Заказ можно оформлять.', 'success');
-            alert(
-                '✅ Все гуд!\n\n' +
-                'Заказ готов к оформлению:\n' +
-                '• Товаров: ' + cart.length + '\n' +
-                '• Город: ' + city + '\n' +
-                '• Адрес: ' + address + '\n' +
-                '• Тариф: ' + selectedTariff.tariff_name + '\n' +
-                '• Итого: ' + document.getElementById('total-grand').textContent
-            );
+            alert('✅ Все гуд!\n\nЗаказ готов к оформлению:\n• Товаров: ' + cart.length + '\n• Город: ' + document.getElementById('city-input').value + '\n• Адрес: ' + document.getElementById('address-input').value + '\n• Тариф: ' + selectedTariff.tariff_name + '\n• Итого: ' + document.getElementById('total-grand').textContent);
         } else {
-            const message = '❌ Что-то не так:\n\n• ' + errors.join('\n• ');
-            setStatus(message.replace(/\n/g, ' '), 'error');
-            alert(message);
+            setStatus('❌ Что-то не так: ' + errors.join(' | '), 'error');
+            alert('❌ Что-то не так:\n\n• ' + errors.join('\n• '));
         }
     }
 
@@ -516,15 +393,9 @@
         const input = document.getElementById('city-input');
         const button = document.getElementById('search-button');
         const query = input.value.trim();
+        if (!query) { alert('Введите название города'); return; }
 
-        if (!query) {
-            alert('Введите название города');
-            return;
-        }
-
-        button.disabled = true;
-        button.textContent = 'Поиск...';
-
+        button.disabled = true; button.textContent = 'Поиск...';
         try {
             const result = await geocodeCity(query);
             recipientLocation = result;
@@ -535,8 +406,7 @@
             console.error(error);
             setStatus('Не удалось найти город. Проверьте название.', 'error');
         } finally {
-            button.disabled = false;
-            button.textContent = 'Найти';
+            button.disabled = false; button.textContent = 'Найти';
         }
     }
 
@@ -546,52 +416,35 @@
                 try {
                     const result = await ymaps.geocode(query, { kind: 'locality', results: 10 });
                     const geoObjects = result.geoObjects.toArray();
-
-                    if (!geoObjects.length) {
-                        reject(new Error('Город не найден'));
-                        return;
-                    }
+                    if (!geoObjects.length) { reject(new Error('Город не найден')); return; }
 
                     let selected = null;
                     for (const geoObject of geoObjects) {
                         const meta = geoObject.properties.get('metaDataProperty.GeocoderMetaData');
                         const components = meta?.Address?.Components || [];
                         const locality = components.find(c => c.kind === 'locality');
-                        
                         if (locality && locality.name && locality.name.toLowerCase() !== 'россия') {
                             const coords = geoObject.geometry.getCoordinates();
                             selected = { city: locality.name, lat: coords[0], lon: coords[1] };
                             break;
                         }
                     }
-
                     if (!selected) {
                         const first = geoObjects[0];
                         const name = first.properties.get('name');
-                        if (!name || name.toLowerCase() === 'россия') {
-                            reject(new Error('Не удалось определить город'));
-                            return;
-                        }
+                        if (!name || name.toLowerCase() === 'россия') { reject(new Error('Не удалось определить город')); return; }
                         const coords = first.geometry.getCoordinates();
                         selected = { city: name, lat: coords[0], lon: coords[1] };
                     }
-
                     resolve(selected);
-                } catch (error) {
-                    reject(error);
-                }
+                } catch (error) { reject(error); }
             });
         });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        renderProducts();
-        renderCart();
-        initCdekWidget();
-
-        document.getElementById('city-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') searchCity();
-        });
+        renderProducts(); renderCart(); initCdekWidget();
+        document.getElementById('city-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchCity(); });
     });
 </script>
 
