@@ -3,78 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мини-магазин с доставкой СДЭК</title>
+    <title>Магазин одежды с доставкой СДЭК</title>
     <!-- Подключение виджета СДЭК -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@4" charset="utf-8"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; }
-        h2 { text-align: center; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
+        h2 { text-align: center; margin-bottom: 10px; }
+        
+        /* Статус корзины */
+        .cart-status { text-align: center; font-size: 18px; font-weight: bold; color: #28a745; margin-bottom: 20px; min-height: 27px; }
+
+        /* Карточки товаров */
         .products { display: flex; gap: 20px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap; }
         .product-card { 
             border: 2px solid #e0e0e0; padding: 20px; border-radius: 12px; width: 250px; 
-            cursor: pointer; transition: all 0.3s ease; background: white; text-align: center;
+            background: white; text-align: center; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .product-card:hover, .product-card.active { border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.2); transform: translateY(-3px); }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
         .product-card h3 { margin-top: 0; color: #007bff; }
-        .controls { margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .product-card .price { font-size: 20px; font-weight: bold; margin: 15px 0; }
+        
+        /* Кнопки */
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; width: 100%; }
+        .btn-cart { background-color: #28a745; color: white; }
+        .btn-cart:hover { background-color: #218838; }
+        .btn-search { background-color: #007bff; color: white; width: auto; padding: 12px 24px; }
+        .btn-search:hover { background-color: #0056b3; }
+
+        /* Панель управления */
+        .controls { margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .input-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .input-group:last-child { margin-bottom: 0; }
         .input-group label { min-width: 80px; font-weight: bold; color: #555; }
         input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; flex-grow: 1; font-size: 14px; min-width: 200px; }
-        button { padding: 12px 24px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; }
-        button:hover { background-color: #0056b3; }
+        input:focus { outline: none; border-color: #007bff; }
+
+        /* Виджет */
         #cdek-map { width: 100%; height: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; }
     </style>
 </head>
 <body>
 
-    <h2>Выберите товар для расчета доставки</h2>
+    <h2>Магазин одежды</h2>
+    
+    <!-- Индикатор выбранного товара -->
+    <div class="cart-status" id="cart-status">Корзина пуста. Выберите товар для расчета доставки.</div>
+
     <div class="products">
-        <!-- Габариты скрыты от пользователя, они передаются в виджет только через JS -->
-        <div class="product-card active" onclick="selectProduct(0)">
-            <h3>Кроссовки</h3>
-            <p>Цена: <strong>5 000 ₽</strong></p>
+        <!-- Товар 1 -->
+        <div class="product-card">
+            <h3>Зимняя куртка</h3>
+            <p class="price">12 500 ₽</p>
+            <button class="btn btn-cart" onclick="addToCart(0)">Добавить в корзину</button>
         </div>
-        <div class="product-card" onclick="selectProduct(1)">
-            <h3>Рюкзак городской</h3>
-            <p>Цена: <strong>3 500 ₽</strong></p>
+        <!-- Товар 2 -->
+        <div class="product-card">
+            <h3>Джинсы классические</h3>
+            <p class="price">4 500 ₽</p>
+            <button class="btn btn-cart" onclick="addToCart(1)">Добавить в корзину</button>
         </div>
-        <div class="product-card" onclick="selectProduct(2)">
-            <h3>Наручные часы</h3>
-            <p>Цена: <strong>15 000 ₽</strong></p>
+        <!-- Товар 3 -->
+        <div class="product-card">
+            <h3>Хлопковая футболка</h3>
+            <p class="price">1 500 ₽</p>
+            <button class="btn btn-cart" onclick="addToCart(2)">Добавить в корзину</button>
         </div>
     </div>
 
     <div class="controls">
         <div class="input-group">
             <label for="city-input">Город:</label>
-            <input type="text" id="city-input" value="Чебоксары" placeholder="Введите город (например, Москва)">
-            <button onclick="searchCity()">Найти ПВЗ</button>
+            <input type="text" id="city-input" value="Чебоксары" placeholder="Введите город доставки">
+            <button class="btn btn-search" onclick="searchCity()">Найти</button>
         </div>
         
         <div class="input-group">
             <label for="address-input">Адрес:</label>
-            <input type="text" id="address-input" placeholder="Заполнится автоматически при выборе ПВЗ или введите вручную">
+            <input type="text" id="address-input" placeholder="Заполнится автоматически при выборе ПВЗ на карте">
         </div>
     </div>
 
-    <!-- Контейнер для виджета -->
+    <!-- Контейнер для виджета СДЭК -->
     <div id="cdek-map"></div>
 
     <script>
-        // Габариты товаров (строго в коде, не видны в HTML-разметке)
+        // =====================================================================
+        // ГАБАРИТЫ ТОВАРОВ (Скрыты в коде, не отображаются на сайте)
+        // =====================================================================
         const productsData = [
-            { name: 'Кроссовки', width: 30, height: 20, length: 10, weight: 800 },
-            { name: 'Рюкзак городской', width: 40, height: 50, length: 20, weight: 1200 },
-            { name: 'Наручные часы', width: 10, height: 10, length: 10, weight: 200 }
+            { name: 'Зимняя куртка', width: 40, height: 60, length: 15, weight: 1500 },
+            { name: 'Джинсы классические', width: 30, height: 10, length: 40, weight: 800 },
+            { name: 'Хлопковая футболка', width: 25, height: 5, length: 30, weight: 300 }
         ];
 
-        let currentProductIndex = 0;
+        let currentGoods = null; // Здесь хранится текущий выбранный товар с габаритами
         let cdekWidget = null;
 
-        // Функция инициализации/переинициализации виджета
+        // =====================================================================
+        // ЛОГИКА КОРЗИНЫ И ВИДЖЕТА
+        // =====================================================================
+        
+        // Функция добавления в корзину
+        function addToCart(index) {
+            currentGoods = productsData[index];
+            
+            // Обновляем текст статуса корзины
+            document.getElementById('cart-status').innerText = `В корзине: ${currentGoods.name} (расчет доставки обновлен)`;
+            
+            // Получаем текущий город и перезапускаем виджет с новыми габаритами
+            const city = document.getElementById('city-input').value.trim() || 'Чебоксары';
+            initWidget(city, currentGoods);
+        }
+
+        // Функция инициализации/перезапуска виджета
         function initWidget(city, goods) {
             const container = document.getElementById('cdek-map');
-            container.innerHTML = ''; // Очищаем контейнер для корректного пересоздания виджета
+            container.innerHTML = ''; // Очищаем старый виджет перед созданием нового
+
+            // Если товар еще не выбран, показываем заглушку или инициализируем без goods (виджет может ругаться, поэтому лучше ждать выбора)
+            if (!goods) {
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#777;">Добавьте товар в корзину, чтобы увидеть варианты доставки</div>';
+                return;
+            }
 
             cdekWidget = new window.CDEKWidget({
                 from: city,
@@ -82,37 +132,38 @@
                 apiKey: '89e052c4-e455-4c32-bca9-f83a2464c827', // Ваш Yandex API Key
                 servicePath: 'https://cdek.aroslavrazzivin.workers.dev/', // Ваш Cloudflare Worker
                 defaultLocation: city,
-                goods: [goods],
+                goods: [goods], // Передаем скрытые габариты для точного расчета тарифов
                 onChoose: function(pvz) {
-                    // Автоматическое заполнение поля "Адрес" при выборе ПВЗ на карте
+                    // Автоматическое заполнение адреса при клике на ПВЗ
                     const fullAddress = pvz.address ? `${pvz.city}, ${pvz.address}` : (pvz.name || '');
                     document.getElementById('address-input').value = fullAddress;
                 }
             });
         }
 
-        // Выбор товара (обновляет виджет с новыми скрытыми габаритами)
-        function selectProduct(index) {
-            currentProductIndex = index;
-            document.querySelectorAll('.product-card').forEach((card, i) => {
-                card.classList.toggle('active', i === index);
-            });
-            const city = document.getElementById('city-input').value.trim() || 'Чебоксары';
-            initWidget(city, productsData[index]);
-        }
-
-        // Поиск города через Яндекс Геокодер и обновление виджета
+        // =====================================================================
+        // ЛОГИКА ПОИСКА ГОРОДА (Яндекс Геокодер)
+        // =====================================================================
         async function searchCity() {
             const cityInput = document.getElementById('city-input').value.trim();
-            if (!cityInput) return;
+            if (!cityInput) {
+                alert('Пожалуйста, введите название города');
+                return;
+            }
 
             const geocoderUrl = `https://geocode-maps.yandex.ru/1.x/?apikey=89e052c4-e455-4c32-bca9-f83a2464c827&geocode=${encodeURIComponent(cityInput)}&format=json`;
             
             try {
+                // Показываем пользователю, что идет поиск
+                const searchBtn = document.querySelector('.btn-search');
+                const originalText = searchBtn.innerText;
+                searchBtn.innerText = 'Поиск...';
+                searchBtn.disabled = true;
+
                 const response = await fetch(geocoderUrl);
                 const data = await response.json();
                 
-                // Получаем корректное название города из ответа Яндекс (берем первый элемент до запятой)
+                // Получаем корректное название города из ответа Яндекса (первый элемент до запятой)
                 const geoObject = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
                 const formattedCity = geoObject 
                     ? geoObject.metaDataProperty.GeocoderMetaData.Address.formatted.split(',')[0].trim() 
@@ -121,18 +172,30 @@
                 // Обновляем поле ввода на валидное название города
                 document.getElementById('city-input').value = formattedCity; 
                 
-                // Переинициализируем виджет с найденным городом
-                initWidget(formattedCity, productsData[currentProductIndex]);
+                // Если товар уже в корзине, обновляем виджет для нового города
+                if (currentGoods) {
+                    initWidget(formattedCity, currentGoods);
+                } else {
+                    alert('Город найден: ' + formattedCity + '. Теперь добавьте товар в корзину для расчета доставки.');
+                }
+
+                searchBtn.innerText = originalText;
+                searchBtn.disabled = false;
             } catch (error) {
                 console.error('Ошибка Яндекс Геокодера:', error);
-                // В случае ошибки всё равно пытаемся открыть виджет с введенным текстом
-                initWidget(cityInput, productsData[currentProductIndex]);
+                alert('Не удалось найти город. Проверьте название или попробуйте позже.');
+                const searchBtn = document.querySelector('.btn-search');
+                searchBtn.innerText = 'Найти';
+                searchBtn.disabled = false;
             }
         }
 
-        // Первичная инициализация при загрузке страницы (по умолчанию Чебоксары)
+        // =====================================================================
+        // ПЕРВИЧНАЯ ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+        // =====================================================================
         document.addEventListener('DOMContentLoaded', () => {
-            initWidget('Чебоксары', productsData[0]);
+            // При загрузке корзина пуста, показываем подсказку в контейнере виджета
+            initWidget('Чебоксары', null);
         });
     </script>
 </body>
